@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Hairstyle } from '../types';
 
 interface HairstyleCardProps {
@@ -7,49 +7,136 @@ interface HairstyleCardProps {
 }
 
 const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick }) => {
+  const [imageLoaded, setImageLoaded] = useState(true);
+
+  const handleImageError = () => {
+    setImageLoaded(false);
+  };
+
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+  };
+
+  // Don't render the card if image failed to load
+  if (!imageLoaded) {
+    return null;
+  }
+
   return (
     <div
-      className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl overflow-hidden cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:bg-white/90 border border-white/30 group"
+      style={{
+        background: 'rgba(255, 255, 255, 0.8)',
+        backdropFilter: 'blur(8px)',
+        borderRadius: '1.5rem',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        overflow: 'hidden',
+        cursor: 'pointer',
+        transition: 'all 0.3s ease',
+        border: '1px solid rgba(255, 255, 255, 0.3)'
+      }}
       onClick={onClick}
+      onMouseOver={(e) => {
+        e.currentTarget.style.transform = 'scale(1.05)';
+        e.currentTarget.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.4)';
+        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
+      }}
+      onMouseOut={(e) => {
+        e.currentTarget.style.transform = 'scale(1)';
+        e.currentTarget.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.25)';
+        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
+      }}
     >
-      <div className="relative overflow-hidden">
+      <div style={{ position: 'relative', overflow: 'hidden' }}>
         <img
           src={hairstyle.image_url}
           alt={hairstyle.name}
-          className="w-full h-80 object-cover object-center transition-transform duration-300 group-hover:scale-110"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = 'https://via.placeholder.com/400x500/f3f4f6/9ca3af?text=No+Image';
+          style={{
+            width: '100%',
+            height: '20rem',
+            objectFit: 'cover',
+            objectPosition: 'center',
+            transition: 'transform 0.3s ease'
           }}
+          onError={handleImageError}
+          onLoad={handleImageLoad}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-        <div className="absolute top-4 right-4">
-          <span className="bg-gradient-to-r from-pink-500 to-purple-600 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg">
+        <div style={{ 
+          position: 'absolute', 
+          inset: '0', 
+          background: 'linear-gradient(to top, rgba(0, 0, 0, 0.2), transparent, transparent)', 
+          opacity: '0', 
+          transition: 'opacity 0.3s ease' 
+        }}></div>
+        <div style={{ position: 'absolute', top: '1rem', right: '1rem' }}>
+          <span style={{ 
+            background: 'linear-gradient(to right, #ec4899, #9333ea)', 
+            color: 'white', 
+            fontSize: '0.75rem', 
+            fontWeight: '600', 
+            padding: '0.375rem 0.75rem', 
+            borderRadius: '9999px', 
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' 
+          }}>
             {hairstyle.category}
           </span>
         </div>
       </div>
       
-      <div className="p-6">
-        <h3 className="font-bold text-xl text-gray-900 mb-3 group-hover:text-purple-700 transition-colors duration-300">
+      <div style={{ padding: '1.5rem' }}>
+        <h3 style={{ 
+          fontWeight: 'bold', 
+          fontSize: '1.25rem', 
+          color: '#111827', 
+          marginBottom: '0.75rem', 
+          transition: 'color 0.3s ease' 
+        }}>
           {hairstyle.name}
         </h3>
         
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2 leading-relaxed">
+        <p style={{ 
+          color: '#4b5563', 
+          fontSize: '0.875rem', 
+          marginBottom: '1rem', 
+          lineHeight: '1.5',
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden'
+        }}>
           {hairstyle.description}
         </p>
         
-        <div className="flex flex-wrap gap-2 mb-4">
-          <span className="bg-gradient-to-r from-pink-100 to-purple-100 text-pink-700 text-xs font-medium px-3 py-1.5 rounded-full">
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+          <span style={{ 
+            background: 'linear-gradient(to right, #fce7f3, #f3e8ff)', 
+            color: '#be185d', 
+            fontSize: '0.75rem', 
+            fontWeight: '500', 
+            padding: '0.375rem 0.75rem', 
+            borderRadius: '9999px' 
+          }}>
             {hairstyle.length}
           </span>
-          <span className="bg-gradient-to-r from-indigo-100 to-blue-100 text-indigo-700 text-xs font-medium px-3 py-1.5 rounded-full">
+          <span style={{ 
+            background: 'linear-gradient(to right, #e0e7ff, #dbeafe)', 
+            color: '#3730a3', 
+            fontSize: '0.75rem', 
+            fontWeight: '500', 
+            padding: '0.375rem 0.75rem', 
+            borderRadius: '9999px' 
+          }}>
             {hairstyle.texture}
           </span>
         </div>
         
-        <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-2">
-          <span className="font-medium">Perfect for:</span> {hairstyle.face_shapes.join(', ')} faces
+        <div style={{ 
+          fontSize: '0.75rem', 
+          color: '#6b7280', 
+          background: '#f9fafb', 
+          borderRadius: '0.5rem', 
+          padding: '0.5rem' 
+        }}>
+          <span style={{ fontWeight: '500' }}>Perfect for:</span> {hairstyle.face_shapes.join(', ')} faces
         </div>
       </div>
     </div>

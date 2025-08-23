@@ -1,5 +1,7 @@
 import React from 'react';
 import { Filters } from '../types';
+import FaceShapeIcons from './FaceShapeIcons';
+import HairStyleIcons from './HairStyleIcons';
 
 interface FilterPanelProps {
   filters: Filters;
@@ -22,41 +24,30 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 }) => {
   const hasActiveFilters = Object.values(activeFilters).some(value => value !== '');
 
-  // Icon mappings for visual examples
-  const faceShapeIcons: { [key: string]: string } = {
-    'Oval': '⭕',
-    'Round': '🔴', 
-    'Square': '⬜',
-    'Heart': '💖',
-    'Long': '📏'
-  };
-
-  const lengthIcons: { [key: string]: string } = {
-    'Short': '✂️',
-    'Medium': '💇‍♀️',
-    'Long': '👩‍🦱'
-  };
-
-  const textureIcons: { [key: string]: string } = {
-    'Straight': '➖',
-    'Wavy': '〰️',
-    'Curly': '🌀',
-    'Textured': '🔀',
-    'Any': '✨'
-  };
-
-  const categoryIcons: { [key: string]: string } = {
-    'Short': '✂️',
-    'Medium': '💇‍♀️', 
-    'Long': '👩‍🦱'
+  // Render SVG icons for different filter types
+  const renderIcon = (type: 'face' | 'length' | 'texture' | 'category', value: string, isActive: boolean) => {
+    const iconColor = isActive ? '#be185d' : '#6b7280';
+    
+    if (type === 'face') {
+      return <FaceShapeIcons shape={value} size={20} color={iconColor} />;
+    }
+    
+    if (type === 'length' || type === 'category') {
+      return <HairStyleIcons type="length" style={value} size={20} color={iconColor} />;
+    }
+    
+    if (type === 'texture') {
+      return <HairStyleIcons type="texture" style={value} size={20} color={iconColor} />;
+    }
+    
+    return null;
   };
 
   const renderIconButtons = (
     items: string[], 
     activeValue: string, 
     filterType: string, 
-    iconMap: { [key: string]: string },
-    borderColor: string
+    iconType: 'face' | 'length' | 'texture' | 'category'
   ) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
       <button
@@ -120,7 +111,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
             }
           }}
         >
-          <span style={{ fontSize: '1rem' }}>{iconMap[item] || '•'}</span>
+          {renderIcon(iconType, item, activeValue === item)}
           {item}
         </button>
       ))}
@@ -135,7 +126,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
             👤 Face Shape
           </label>
-          {renderIconButtons(filters.face_shapes, activeFilters.face_shape, 'face_shape', faceShapeIcons, '#f43f5e')}
+          {renderIconButtons(filters.face_shapes, activeFilters.face_shape, 'face_shape', 'face')}
         </div>
 
         {/* Length Filter */}
@@ -143,7 +134,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
             📏 Length
           </label>
-          {renderIconButtons(filters.lengths, activeFilters.length, 'length', lengthIcons, '#8b5cf6')}
+          {renderIconButtons(filters.lengths, activeFilters.length, 'length', 'length')}
         </div>
 
         {/* Texture Filter */}
@@ -151,7 +142,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
             ✨ Texture
           </label>
-          {renderIconButtons(filters.textures, activeFilters.texture, 'texture', textureIcons, '#3b82f6')}
+          {renderIconButtons(filters.textures, activeFilters.texture, 'texture', 'texture')}
         </div>
 
         {/* Category Filter */}
@@ -159,7 +150,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
             💇‍♀️ Category
           </label>
-          {renderIconButtons(filters.categories, activeFilters.category, 'category', categoryIcons, '#ec4899')}
+          {renderIconButtons(filters.categories, activeFilters.category, 'category', 'category')}
         </div>
       </div>
 
