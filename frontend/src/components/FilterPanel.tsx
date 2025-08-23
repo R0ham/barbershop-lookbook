@@ -2,6 +2,8 @@ import React from 'react';
 import { Filters } from '../types';
 import FaceShapeIcons from './FaceShapeIcons';
 import HairStyleIcons from './HairStyleIcons';
+import { StyleTypeIcon } from './StyleTypeIcons';
+import { PoseIcon } from './PoseIcons';
 
 interface FilterPanelProps {
   filters: Filters;
@@ -10,6 +12,8 @@ interface FilterPanelProps {
     length: string;
     texture: string;
     face_shape: string;
+    style_type: string;
+    pose: string;
     search: string;
   };
   onFilterChange: (filterType: string, value: string) => void;
@@ -151,6 +155,40 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
             💇‍♀️ Category
           </label>
           {renderIconButtons(filters.categories, activeFilters.category, 'category', 'category')}
+        </div>
+
+        {/* Style Type Filter */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
+            ⚧ Style Type
+          </label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            {filters.style_types.map((styleType) => (
+              <StyleTypeIcon
+                key={styleType}
+                type={styleType as 'Masculine' | 'Feminine' | 'Unisex'}
+                isActive={activeFilters.style_type === styleType}
+                onClick={() => onFilterChange('style_type', activeFilters.style_type === styleType ? '' : styleType)}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Pose Filter */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
+            📸 Pose
+          </label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+            {filters.poses.map((pose) => (
+              <PoseIcon
+                key={pose}
+                pose={pose as 'Straight-on' | 'Side' | 'Angled'}
+                isActive={activeFilters.pose === pose}
+                onClick={() => onFilterChange('pose', activeFilters.pose === pose ? '' : pose)}
+              />
+            ))}
+          </div>
         </div>
       </div>
 

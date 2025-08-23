@@ -19,6 +19,8 @@ class Database {
           length TEXT NOT NULL,
           texture TEXT NOT NULL,
           face_shapes TEXT NOT NULL,
+          style_type TEXT DEFAULT 'Unisex',
+          pose TEXT DEFAULT 'Straight-on',
           image_url TEXT NOT NULL,
           image_data BLOB,
           description TEXT,
@@ -32,6 +34,8 @@ class Database {
       this.db.run(`CREATE INDEX IF NOT EXISTS idx_category ON hairstyles(category)`);
       this.db.run(`CREATE INDEX IF NOT EXISTS idx_length ON hairstyles(length)`);
       this.db.run(`CREATE INDEX IF NOT EXISTS idx_texture ON hairstyles(texture)`);
+      this.db.run(`CREATE INDEX IF NOT EXISTS idx_style_type ON hairstyles(style_type)`);
+      this.db.run(`CREATE INDEX IF NOT EXISTS idx_pose ON hairstyles(pose)`);
 
       // Insert sample data if table is empty
       this.db.get("SELECT COUNT(*) as count FROM hairstyles", (err, row) => {
@@ -55,6 +59,8 @@ class Database {
         length: "Short",
         texture: "Straight",
         face_shapes: JSON.stringify(["Oval", "Square"]),
+        style_type: "Feminine",
+        pose: "Straight-on",
         image_url: "https://images.unsplash.com/photo-1494790108755-2616c96d5e55?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "A timeless short cut that hits just below the chin",
         tags: JSON.stringify(["classic", "professional", "low-maintenance"])
@@ -65,6 +71,8 @@ class Database {
         length: "Medium",
         texture: "Wavy",
         face_shapes: JSON.stringify(["Oval", "Heart", "Round"]),
+        style_type: "Feminine",
+        pose: "Angled",
         image_url: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Effortless wavy style perfect for a casual look",
         tags: JSON.stringify(["casual", "beachy", "textured"])
@@ -75,6 +83,8 @@ class Database {
         length: "Long",
         texture: "Straight",
         face_shapes: JSON.stringify(["Oval", "Long"]),
+        style_type: "Feminine",
+        pose: "Side",
         image_url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Flowing layers that add movement and dimension",
         tags: JSON.stringify(["layered", "voluminous", "elegant"])
@@ -85,6 +95,8 @@ class Database {
         length: "Short",
         texture: "Straight",
         face_shapes: JSON.stringify(["Oval", "Heart"]),
+        style_type: "Unisex",
+        pose: "Straight-on",
         image_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Bold and edgy short cut that's easy to maintain",
         tags: JSON.stringify(["edgy", "bold", "low-maintenance"])
@@ -95,6 +107,8 @@ class Database {
         length: "Medium",
         texture: "Curly",
         face_shapes: JSON.stringify(["Oval", "Round"]),
+        style_type: "Feminine",
+        pose: "Angled",
         image_url: "https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Textured layers that enhance natural curls",
         tags: JSON.stringify(["curly", "textured", "bohemian"])
@@ -105,6 +119,8 @@ class Database {
         length: "Medium",
         texture: "Straight",
         face_shapes: JSON.stringify(["Oval", "Square"]),
+        style_type: "Feminine",
+        pose: "Straight-on",
         image_url: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "A sleek long bob with clean, straight lines",
         tags: JSON.stringify(["sleek", "modern", "sophisticated"])
@@ -115,6 +131,8 @@ class Database {
         length: "Long",
         texture: "Any",
         face_shapes: JSON.stringify(["Oval", "Heart", "Round"]),
+        style_type: "Feminine",
+        pose: "Angled",
         image_url: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Elegant braided style perfect for special occasions",
         tags: JSON.stringify(["braided", "elegant", "formal"])
@@ -125,6 +143,8 @@ class Database {
         length: "Short",
         texture: "Straight",
         face_shapes: JSON.stringify(["Oval", "Square"]),
+        style_type: "Feminine",
+        pose: "Side",
         image_url: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Modern bob with one side longer than the other",
         tags: JSON.stringify(["asymmetrical", "modern", "trendy"])
@@ -135,6 +155,8 @@ class Database {
         length: "Long",
         texture: "Straight",
         face_shapes: JSON.stringify(["Oval", "Heart"]),
+        style_type: "Feminine",
+        pose: "Straight-on",
         image_url: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Ultra-smooth straight hair with a glossy finish",
         tags: JSON.stringify(["sleek", "glossy", "elegant"])
@@ -145,6 +167,8 @@ class Database {
         length: "Short",
         texture: "Textured",
         face_shapes: JSON.stringify(["Round", "Square"]),
+        style_type: "Masculine",
+        pose: "Angled",
         image_url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Modern textured crop with defined layers",
         tags: JSON.stringify(["textured", "modern", "edgy"])
@@ -155,6 +179,8 @@ class Database {
         length: "Medium",
         texture: "Curly",
         face_shapes: JSON.stringify(["Oval", "Long"]),
+        style_type: "Masculine",
+        pose: "Straight-on",
         image_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Full, bouncy curls with natural volume",
         tags: JSON.stringify(["voluminous", "curly", "natural"])
@@ -165,6 +191,8 @@ class Database {
         length: "Medium",
         texture: "Straight",
         face_shapes: JSON.stringify(["Heart", "Long"]),
+        style_type: "Feminine",
+        pose: "Side",
         image_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Elegant side-swept bangs with shoulder-length hair",
         tags: JSON.stringify(["bangs", "elegant", "sophisticated"])
@@ -172,8 +200,8 @@ class Database {
     ];
 
     const stmt = this.db.prepare(`
-      INSERT INTO hairstyles (id, name, category, length, texture, face_shapes, image_url, description, tags)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO hairstyles (id, name, category, length, texture, face_shapes, style_type, pose, image_url, description, tags)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     sampleHairstyles.forEach(style => {
@@ -184,6 +212,8 @@ class Database {
         style.length,
         style.texture,
         style.face_shapes,
+        style.style_type,
+        style.pose,
         style.image_url,
         style.description,
         style.tags
@@ -217,6 +247,16 @@ class Database {
       if (filters.face_shape) {
         query += ' AND face_shapes LIKE ?';
         params.push(`%"${filters.face_shape}"%`);
+      }
+
+      if (filters.style_type) {
+        query += ' AND style_type = ?';
+        params.push(filters.style_type);
+      }
+
+      if (filters.pose) {
+        query += ' AND pose = ?';
+        params.push(filters.pose);
       }
 
       if (filters.search) {
@@ -298,6 +338,8 @@ class Database {
         'SELECT DISTINCT category FROM hairstyles ORDER BY category',
         'SELECT DISTINCT length FROM hairstyles ORDER BY length',
         'SELECT DISTINCT texture FROM hairstyles ORDER BY texture',
+        'SELECT DISTINCT style_type FROM hairstyles ORDER BY style_type',
+        'SELECT DISTINCT pose FROM hairstyles ORDER BY pose',
         'SELECT face_shapes FROM hairstyles'
       ];
 
@@ -309,7 +351,7 @@ class Database {
           });
         })
       )).then(results => {
-        const [categories, lengths, textures, faceShapesRows] = results;
+        const [categories, lengths, textures, styleTypes, poses, faceShapesRows] = results;
         
         // Extract unique face shapes from JSON arrays
         const faceShapesSet = new Set();
@@ -322,6 +364,8 @@ class Database {
           categories: categories.map(row => row.category),
           lengths: lengths.map(row => row.length),
           textures: textures.map(row => row.texture),
+          style_types: styleTypes.map(row => row.style_type),
+          poses: poses.map(row => row.pose),
           face_shapes: Array.from(faceShapesSet).sort()
         });
       }).catch(reject);

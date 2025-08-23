@@ -14,13 +14,17 @@ const HairstyleGallery: React.FC = () => {
     categories: [],
     lengths: [],
     textures: [],
-    face_shapes: []
+    face_shapes: [],
+    style_types: [],
+    poses: []
   });
   const [activeFilters, setActiveFilters] = useState({
     category: '',
     length: '',
     texture: '',
     face_shape: '',
+    style_type: '',
+    pose: '',
     search: ''
   });
   const [selectedHairstyle, setSelectedHairstyle] = useState<Hairstyle | null>(null);
@@ -91,6 +95,8 @@ const HairstyleGallery: React.FC = () => {
       length: '',
       texture: '',
       face_shape: '',
+      style_type: '',
+      pose: '',
       search: ''
     });
   };
