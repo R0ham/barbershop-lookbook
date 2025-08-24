@@ -253,6 +253,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('ethnicity', val, cardId); animatePill(e.currentTarget as HTMLElement); } }}
                   className={pillStyles('ethnicity', isSelected('ethnicity', val)).className}
                 >
+                  {getMinimalIcon('ethnicity', val, 20, pillStyles('ethnicity', isSelected('ethnicity', val)).icon)}
                   {val}
                 </span>
               );

@@ -27,7 +27,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
   // Render minimal-stroke SVG icons for each filter type (not for 'All')
   const renderIcon = (
-    type: 'face' | 'length' | 'texture' | 'style' | 'pose',
+    type: 'face' | 'length' | 'texture' | 'style' | 'pose' | 'ethnicity',
     value: string,
     isActive: boolean
   ) => {
@@ -40,7 +40,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     items: string[],
     activeValues: string[],
     filterType: string,
-    iconType: 'face' | 'length' | 'texture' | 'style' | 'pose'
+    iconType: 'face' | 'length' | 'texture' | 'style' | 'pose' | 'ethnicity'
   ) => (
     <div className="flex flex-wrap gap-2">
       <button
@@ -163,7 +163,12 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           <label className="text-sm font-semibold text-gray-700">
             Ethnicity
           </label>
-          {renderTextButtons(filters.ethnicities || [], activeFilters.ethnicity, 'ethnicity')}
+          {renderIconButtons(
+            filters.ethnicities || [],
+            activeFilters.ethnicity,
+            'ethnicity',
+            'ethnicity'
+          )}
         </div>
       </div>
 

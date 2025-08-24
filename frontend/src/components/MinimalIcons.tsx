@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type MinimalIconKind = 'face' | 'length' | 'texture' | 'style' | 'pose';
+export type MinimalIconKind = 'face' | 'length' | 'texture' | 'style' | 'pose' | 'ethnicity';
 
 interface IconProps {
   size?: number;
@@ -12,6 +12,77 @@ const svgStyle = (size?: number) => ({ width: size ?? 20, height: size ?? 20, di
 const baseStroke = (color?: string) => ({ stroke: color ?? '#2563eb', strokeWidth: 1.8, fill: 'none' });
 // Extra props only for path/line where TS allows these
 const capJoin = { strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+
+// Ethnicity icons: minimal metaphors
+//  - Caucasian: hairclip (arched clip with small teeth)
+//  - Asian: hairstick (diagonal stick through a small bun)
+//  - Afro: plastic hairbead (bead with string)
+export const MinimalEthnicityIcon: React.FC<{ ethnicity: string } & IconProps> = ({ ethnicity, size, color }) => {
+  const e = (ethnicity || '').toLowerCase();
+  const baseColor = color ?? '#2563eb';
+  const outline = { stroke: baseColor, strokeWidth: 1.6, fill: 'none', ...capJoin } as const;
+  const softFill = { fill: baseColor, opacity: 0.15 } as const;
+  const solidFill = { fill: baseColor, opacity: 0.9 } as const;
+
+  return (
+    <svg style={svgStyle(size)} viewBox="0 0 24 24">
+      {/* Caucasian -> single-outline jaw clip silhouette (stroke-only) */}
+      {e === 'caucasian' && (
+        <>
+          <g transform="translate(12,12) scale(1.25) translate(-12,-12)">
+          <path
+            d="M4 16
+               C3.4 11.5, 5.2 6.2, 12 6.2
+               C18.8 6.2, 20.6 11.5, 20 16 Z"
+            stroke={baseColor}
+            strokeWidth={1.8}
+            fill="none"
+            {...capJoin}
+          />
+          {/* Bottom teeth (5) */}
+          <path d="M7.3 13 v2" stroke={baseColor} strokeWidth={1.8} strokeLinecap="round" />
+          <path d="M10.3 12 v4" stroke={baseColor} strokeWidth={1.8} strokeLinecap="round" />
+          {/* <path d="M11.8 12 v4" stroke={baseColor} strokeWidth={1.8} strokeLinecap="round" /> */}
+          <path d="M13.3 12 v4" stroke={baseColor} strokeWidth={1.8} strokeLinecap="round" />
+          <path d="M16.3 13 v2" stroke={baseColor} strokeWidth={1.8} strokeLinecap="round" />
+          {/* Cross bar over teeth connecting sides */}
+          <path d="M4 16 H19.8" stroke={baseColor} strokeWidth={1.8} strokeLinecap="round" />
+          </g>
+        </>
+      )}
+
+      {/* Asian -> simplified stick with cube on top (stroke-only), scaled 1.5x */}
+      {e === 'asian' && (
+        <>
+          <g transform="translate(12,12) scale(1.5) translate(-12,-12)">
+            {/* Diagonal stick */}
+            <path d="M6 17 L12.8 13.06" stroke={baseColor} strokeWidth={1.8} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            {/* Cube (square) attached to stick top */}
+            <rect x={13.2} y={7.7} width={5.0} height={5.0} fill="none" stroke={baseColor} strokeWidth={1.8} />
+            {/* Short connector to touch the cube */}
+            {/* <path d="M11.2 13.8 L13.2 12.2" stroke={baseColor} strokeWidth={1.8} strokeLinecap="round" /> */}
+          </g>
+        </>
+      )}
+
+      {/* Afro -> stroke-only plastic hair bead with angled inner hole, scaled 1.125x and clearer donut (smaller center) */}
+      {e === 'afro' && (
+        <>
+          <g transform="translate(12,12.5) scale(1.125) translate(-12,-12.5)">
+            {/* Bead outer silhouette (slightly squashed circle) */}
+            <ellipse cx={12} cy={12.5} rx={7.6} ry={6.4} fill="none" stroke={baseColor} strokeWidth={1.8} {...capJoin} />
+            {/* Inner hole (angled ellipse to suggest bore) */}
+            <ellipse cx={11.0} cy={12.2} rx={3.45} ry={2.25} fill="none" stroke={baseColor} strokeWidth={1.8} transform="rotate(-8 13.0 13.1)" />
+          </g>
+        </>
+      )}
+
+      {!['caucasian','asian','afro'].includes(e) && (
+        <circle cx={12} cy={12} r={6.5} {...softFill} />
+      )}
+    </svg>
+  );
+};
 
 // Length icons: short/medium/long as hair arcs of increasing length
 export const MinimalLengthIcon: React.FC<{ styleName: string } & IconProps> = ({ styleName, size, color }) => {
@@ -175,6 +246,8 @@ export const getMinimalIcon = (
       return <MinimalStyleTypeIcon type={value} size={size} color={color} />;
     case 'pose':
       return <MinimalPoseIcon pose={value} size={size} color={color} />;
+    case 'ethnicity':
+      return <MinimalEthnicityIcon ethnicity={value} size={size} color={color} />;
     default:
       return null;
   }
