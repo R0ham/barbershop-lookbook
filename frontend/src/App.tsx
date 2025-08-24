@@ -5,7 +5,7 @@ import SearchBar from './components/SearchBar';
 function App() {
   const [headerSearch, setHeaderSearch] = React.useState<string>('');
   return (
-    <div className="min-h-screen scrapbook-bg py-12 px-4">
+    <div className="min-h-screen py-12 px-4">
       {/* Header */}
       <header className="text-center mb-8">
         <h1 className="text-4xl font-extrabold text-slate-900 m-0 tracking-wide font-serif inline-flex items-center gap-2">

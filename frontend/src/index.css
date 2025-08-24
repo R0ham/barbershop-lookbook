@@ -12,9 +12,128 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+
+/* Scrapbook paper background behind the blue fabric */
+html, body {
+  background-color: #fbfaf7; /* warm off-white */
+  background-image:
+    linear-gradient(rgba(24, 24, 24, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24, 24, 24, 0.028) 1px, transparent 1px);
+  background-size: 26px 26px, 26px 26px;
+  background-position: 0 0, 0 0;
+}
+body { position: relative; }
+body::before {
+  content: '';
+  position: absolute; /* scrolls with page */
+  top: 0; left: 0; right: 0; bottom: 0; /* span full body height */
+  /* Height will follow body content; clip-path defines the visible blue area */
+  background: var(--fabric-color); /* peach */
+  /* Woven fabric texture: warp/weft stripes + micro-noise + soft vignette */
+  background-image:
+    /* vertical warp */
+    repeating-linear-gradient(
+      90deg,
+      rgba(255,255,255,0.050) 0 1px,
+      rgba(0,0,0,0.035) 1px 2.5px,
+      rgba(255,255,255,0.020) 2.5px 3.5px,
+      rgba(0,0,0,0.025) 3.5px 5px
+    ),
+    /* horizontal weft */
+    repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,0.050) 0 1px,
+      rgba(0,0,0,0.035) 1px 2.5px,
+      rgba(255,255,255,0.020) 2.5px 3.5px,
+      rgba(0,0,0,0.025) 3.5px 5px
+    ),
+    /* fine micro-noise */
+    repeating-linear-gradient(
+      45deg,
+      rgba(0,0,0,0.015) 0 0.5px,
+      rgba(255,255,255,0.015) 0.5px 1px
+    ),
+    /* gentle top-left to bottom-right shading */
+    linear-gradient(135deg, rgba(255,255,255,0.10), rgba(0,0,0,0.06))
+  ;
+  background-size: 8px 8px, 8px 8px, 2px 2px, cover;
+  background-blend-mode: soft-light, soft-light, multiply, normal;
+  /* Smooth diagonal cut using SVG path() for continuous curvature */
+  /* Fallback polygon for older browsers */
+  clip-path: polygon(100% 0%, 100% 80%, 95% 76%, 90% 68%, 82% 62%, 72% 56%, 64% 48%, 54% 44%, 46% 40%, 38% 34%, 30% 26%, 26% 18%, 24% 10%, 22% 4%, 0% 0%);
+  /* Irregular but smooth multi-curve */
+  clip-path: path('M 100% 0 L 100% 80% C 96% 76%, 90% 68%, 82% 62% C 72% 56%, 64% 48%, 54% 44% C 46% 40%, 38% 34%, 30% 26% C 26% 18%, 24% 10%, 22% 4% L 0 0 L 100% 0 Z');
+  /* Vertical flip of the cut */
+  transform: scaleY(-1);
+  transform-origin: center;
+  z-index: 0; /* behind app content but above body background */
+  pointer-events: none;
+  /* Subtle edge shadow for depth */
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.10));
+}
+
+/* Ensure app containers render above the background layer */
+#root, #__next, body > div:first-child { position: relative; z-index: 1; }
+
+@media (min-width: 768px) {
+  body::before {
+    /* inherit full body height on larger screens as well */
+    /* Fallback polygon then smooth path with stronger mid curve */
+    clip-path: polygon(100% 0%, 100% 78%, 96% 73%, 90% 66%, 82% 60%, 72% 54%, 62% 46%, 52% 42%, 44% 38%, 36% 33%, 28% 25%, 25% 17%, 23% 9%, 21% 3%, 0% 0%);
+    clip-path: path('M 100% 0 L 100% 78% C 96% 73%, 90% 66%, 82% 60% C 72% 54%, 62% 46%, 52% 42% C 44% 38%, 36% 33%, 28% 25% C 25% 17%, 23% 9%, 21% 3% L 0 0 L 100% 0 Z');
+  }
+}
+
+/* Horizontal flip copy of the same cut */
+body::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--fabric-color);
+  /* Woven fabric texture (angled slightly differently for variation) */
+  background-image:
+    /* vertical/angled warp */
+    repeating-linear-gradient(
+      105deg,
+      rgba(255,255,255,0.050) 0 1px,
+      rgba(0,0,0,0.035) 1px 2.5px,
+      rgba(255,255,255,0.020) 2.5px 3.5px,
+      rgba(0,0,0,0.025) 3.5px 5px
+    ),
+    /* horizontal/angled weft */
+    repeating-linear-gradient(
+      15deg,
+      rgba(255,255,255,0.050) 0 1px,
+      rgba(0,0,0,0.035) 1px 2.5px,
+      rgba(255,255,255,0.020) 2.5px 3.5px,
+      rgba(0,0,0,0.025) 3.5px 5px
+    ),
+    /* fine micro-noise */
+    repeating-linear-gradient(
+      -45deg,
+      rgba(0,0,0,0.015) 0 0.5px,
+      rgba(255,255,255,0.015) 0.5px 1px
+    ),
+    /* gentle top-left to bottom-right shading */
+    linear-gradient(135deg, rgba(255,255,255,0.10), rgba(0,0,0,0.06));
+  background-size: 8px 8px, 8px 8px, 2px 2px, cover;
+  background-blend-mode: soft-light, soft-light, multiply, normal;
+  /* Mirrored curve so that after horizontal flip, the top-right remains filled */
+  clip-path: polygon(0% 0%, 0% 92%, 3% 88%, 8% 78%, 16% 66%, 26% 58%, 36% 50%, 46% 44%, 54% 40%, 62% 34%, 70% 26%, 74% 18%, 76% 10%, 78% 4%, 100% 0%);
+  clip-path: path('M 0 0 L 0 92% C 2% 88%, 8% 78%, 16% 66% C 26% 58%, 36% 50%, 46% 44% C 54% 40%, 62% 34%, 70% 26% C 74% 18%, 76% 10%, 78% 4% L 100% 0 L 0 0 Z');
+  transform: scaleX(-1);
+  transform-origin: center;
+  z-index: 0;
+  pointer-events: none;
+  /* Subtle edge shadow for depth */
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.10));
+}
+
 :root {
   /* Global eye-line focal position for grid images */
   --hs-focal-y: 42%;
+  /* Fabric base color */
+  --fabric-color: #A5D8FF; /* baby blue */
 }
 
 /* Performance-oriented card interactions (CSS-only, GPU-friendly) */
