@@ -67,19 +67,6 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick }) => 
           opacity: '0', 
           transition: 'opacity 0.3s ease' 
         }}></div>
-        <div style={{ position: 'absolute', top: '1rem', right: '1rem' }}>
-          <span style={{ 
-            background: 'linear-gradient(to right, #ec4899, #9333ea)', 
-            color: 'white', 
-            fontSize: '0.75rem', 
-            fontWeight: '600', 
-            padding: '0.375rem 0.75rem', 
-            borderRadius: '9999px', 
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' 
-          }}>
-            {hairstyle.category}
-          </span>
-        </div>
       </div>
       
       <div style={{ padding: '1.5rem' }}>

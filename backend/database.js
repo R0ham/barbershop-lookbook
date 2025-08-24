@@ -229,10 +229,7 @@ class Database {
       let query = 'SELECT * FROM hairstyles WHERE 1=1';
       const params = [];
 
-      if (filters.category) {
-        query += ' AND category = ?';
-        params.push(filters.category);
-      }
+      // category filter removed from API surface
 
       if (filters.length) {
         query += ' AND length = ?';
@@ -335,7 +332,6 @@ class Database {
   getFilters() {
     return new Promise((resolve, reject) => {
       const queries = [
-        'SELECT DISTINCT category FROM hairstyles ORDER BY category',
         'SELECT DISTINCT length FROM hairstyles ORDER BY length',
         'SELECT DISTINCT texture FROM hairstyles ORDER BY texture',
         'SELECT DISTINCT style_type FROM hairstyles ORDER BY style_type',
@@ -351,7 +347,7 @@ class Database {
           });
         })
       )).then(results => {
-        const [categories, lengths, textures, styleTypes, poses, faceShapesRows] = results;
+        const [lengths, textures, styleTypes, poses, faceShapesRows] = results;
         
         // Extract unique face shapes from JSON arrays
         const faceShapesSet = new Set();
@@ -361,7 +357,6 @@ class Database {
         });
 
         resolve({
-          categories: categories.map(row => row.category),
           lengths: lengths.map(row => row.length),
           textures: textures.map(row => row.texture),
           style_types: styleTypes.map(row => row.style_type),

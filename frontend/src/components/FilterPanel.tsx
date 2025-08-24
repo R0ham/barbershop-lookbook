@@ -8,7 +8,6 @@ import { PoseIcon } from './PoseIcons';
 interface FilterPanelProps {
   filters: Filters;
   activeFilters: {
-    category: string;
     length: string;
     texture: string;
     face_shape: string;
@@ -28,15 +27,16 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 }) => {
   const hasActiveFilters = Object.values(activeFilters).some(value => value !== '');
 
-  // Render SVG icons for different filter types
-  const renderIcon = (type: 'face' | 'length' | 'texture' | 'category', value: string, isActive: boolean) => {
-    const iconColor = isActive ? '#be185d' : '#6b7280';
+  // Render SVG icons for different filter types (category removed)
+  const renderIcon = (type: 'face' | 'length' | 'texture', value: string, isActive: boolean) => {
+    // Cooler blue for active, slightly cooler gray for inactive
+    const iconColor = isActive ? '#2563eb' : '#64748b';
     
     if (type === 'face') {
       return <FaceShapeIcons shape={value} size={20} color={iconColor} />;
     }
     
-    if (type === 'length' || type === 'category') {
+    if (type === 'length') {
       return <HairStyleIcons type="length" style={value} size={20} color={iconColor} />;
     }
     
@@ -51,7 +51,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     items: string[], 
     activeValue: string, 
     filterType: string, 
-    iconType: 'face' | 'length' | 'texture' | 'category'
+    iconType: 'face' | 'length' | 'texture'
   ) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
       <button
@@ -59,14 +59,14 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         style={{
           padding: '0.5rem 1rem',
           borderRadius: '9999px',
-          border: `2px solid ${activeValue === '' ? '#ec4899' : '#e5e7eb'}`,
-          background: activeValue === '' ? 'rgba(236, 72, 153, 0.1)' : 'rgba(255, 255, 255, 0.8)',
+          border: `2px solid ${activeValue === '' ? '#60a5fa' : '#e5e7eb'}`,
+          background: activeValue === '' ? 'rgba(59, 130, 246, 0.10)' : 'rgba(255, 255, 255, 0.8)',
           backdropFilter: 'blur(8px)',
           cursor: 'pointer',
           transition: 'all 0.3s ease',
           fontSize: '0.875rem',
           fontWeight: '500',
-          color: activeValue === '' ? '#be185d' : '#374151'
+          color: activeValue === '' ? '#2563eb' : '#374151'
         }}
         onMouseOver={(e) => {
           if (activeValue !== '') {
@@ -90,14 +90,14 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           style={{
             padding: '0.5rem 1rem',
             borderRadius: '9999px',
-            border: `2px solid ${activeValue === item ? '#ec4899' : '#e5e7eb'}`,
-            background: activeValue === item ? 'rgba(236, 72, 153, 0.1)' : 'rgba(255, 255, 255, 0.8)',
+            border: `2px solid ${activeValue === item ? '#60a5fa' : '#e5e7eb'}`,
+            background: activeValue === item ? 'rgba(59, 130, 246, 0.10)' : 'rgba(255, 255, 255, 0.8)',
             backdropFilter: 'blur(8px)',
             cursor: 'pointer',
             transition: 'all 0.3s ease',
             fontSize: '0.875rem',
             fontWeight: '500',
-            color: activeValue === item ? '#be185d' : '#374151',
+            color: activeValue === item ? '#2563eb' : '#374151',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem'
@@ -141,20 +141,17 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           {renderIconButtons(filters.lengths, activeFilters.length, 'length', 'length')}
         </div>
 
-        {/* Texture Filter */}
+        {/* Texture Filter (exclude 'Any' option as redundant with All) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
             ✨ Texture
           </label>
-          {renderIconButtons(filters.textures, activeFilters.texture, 'texture', 'texture')}
-        </div>
-
-        {/* Category Filter */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
-            💇‍♀️ Category
-          </label>
-          {renderIconButtons(filters.categories, activeFilters.category, 'category', 'category')}
+          {renderIconButtons(
+            filters.textures.filter(t => t !== 'Any' && t !== 'any'),
+            activeFilters.texture,
+            'texture',
+            'texture'
+          )}
         </div>
 
         {/* Style Type Filter */}

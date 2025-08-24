@@ -22,7 +22,7 @@ export const PoseIcon: React.FC<PoseIconProps> = ({ pose, isActive, onClick }) =
             {/* Mouth - centered */}
             <path d="M45 57 Q50 60 55 57" stroke="#374151" strokeWidth="1.5" fill="none"/>
             {/* Hair - symmetrical */}
-            <path d="M25 40 Q25 25 50 25 Q75 25 75 40 L75 45 Q70 30 50 30 Q30 30 25 45 Z" fill="#8b5cf6"/>
+            <path d="M25 40 Q25 25 50 25 Q75 25 75 40 L75 45 Q70 30 50 30 Q30 30 25 45 Z" fill="#2563eb"/>
             {/* Eyebrows - symmetrical */}
             <path d="M38 38 L46 38" stroke="#374151" strokeWidth="1.5"/>
             <path d="M54 38 L62 38" stroke="#374151" strokeWidth="1.5"/>
@@ -40,7 +40,7 @@ export const PoseIcon: React.FC<PoseIconProps> = ({ pose, isActive, onClick }) =
             {/* Mouth - profile */}
             <path d="M60 57 Q65 59 68 57" stroke="#374151" strokeWidth="1.5" fill="none"/>
             {/* Hair - side view */}
-            <path d="M30 35 Q25 20 45 20 Q65 20 70 35 L70 40 Q65 25 45 25 Q35 25 30 40 Z" fill="#8b5cf6"/>
+            <path d="M30 35 Q25 20 45 20 Q65 20 70 35 L70 40 Q65 25 45 25 Q35 25 30 40 Z" fill="#2563eb"/>
             {/* Eyebrow - single visible */}
             <path d="M52 38 L58 38" stroke="#374151" strokeWidth="1.5"/>
           </svg>
@@ -58,7 +58,7 @@ export const PoseIcon: React.FC<PoseIconProps> = ({ pose, isActive, onClick }) =
             {/* Mouth - angled */}
             <path d="M47 58 Q52 61 57 58" stroke="#374151" strokeWidth="1.5" fill="none"/>
             {/* Hair - angled view */}
-            <path d="M30 38 Q28 23 48 23 Q68 23 72 38 L72 43 Q67 28 48 28 Q33 28 30 43 Z" fill="#8b5cf6"/>
+            <path d="M30 38 Q28 23 48 23 Q68 23 72 38 L72 43 Q67 28 48 28 Q33 28 30 43 Z" fill="#2563eb"/>
             {/* Eyebrows - asymmetrical */}
             <path d="M42 38 L48 38" stroke="#374151" strokeWidth="1.5"/>
             <path d="M55 40 L61 40" stroke="#374151" strokeWidth="1.5"/>
@@ -76,13 +76,13 @@ export const PoseIcon: React.FC<PoseIconProps> = ({ pose, isActive, onClick }) =
         width: '4rem',
         height: '4rem',
         borderRadius: '0.75rem',
-        border: isActive ? '2px solid #8b5cf6' : '2px solid transparent',
+        border: isActive ? '2px solid #60a5fa' : '2px solid transparent',
         background: isActive 
-          ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2))'
+          ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(147, 197, 253, 0.18))'
           : 'rgba(255, 255, 255, 0.7)',
         backdropFilter: 'blur(8px)',
         boxShadow: isActive 
-          ? '0 10px 25px -5px rgba(139, 92, 246, 0.3)' 
+          ? '0 10px 25px -5px rgba(59, 130, 246, 0.28)'
           : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
         transition: 'all 0.3s ease',
         cursor: 'pointer',
@@ -112,7 +112,7 @@ export const PoseIcon: React.FC<PoseIconProps> = ({ pose, isActive, onClick }) =
       <span style={{ 
         fontSize: '0.625rem', 
         fontWeight: '600', 
-        color: isActive ? '#8b5cf6' : '#6b7280',
+        color: isActive ? '#2563eb' : '#6b7280',
         textAlign: 'center'
       }}>
         {pose}

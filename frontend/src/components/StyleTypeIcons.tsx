@@ -22,7 +22,7 @@ export const StyleTypeIcon: React.FC<StyleTypeIconProps> = ({ type, isActive, on
             {/* Mouth */}
             <path d="M45 52 Q50 55 55 52" stroke="#374151" strokeWidth="1.5" fill="none"/>
             {/* Short hair */}
-            <path d="M25 35 Q25 20 50 20 Q75 20 75 35 L75 40 Q70 25 50 25 Q30 25 25 40 Z" fill="#8b5cf6"/>
+            <path d="M25 35 Q25 20 50 20 Q75 20 75 35 L75 40 Q70 25 50 25 Q30 25 25 40 Z" fill="#2563eb"/>
             {/* Eyebrows */}
             <path d="M38 33 L46 33" stroke="#374151" strokeWidth="2"/>
             <path d="M54 33 L62 33" stroke="#374151" strokeWidth="2"/>
@@ -44,9 +44,9 @@ export const StyleTypeIcon: React.FC<StyleTypeIconProps> = ({ type, isActive, on
             {/* Nose */}
             <path d="M50 42 L48 48 L52 48 Z" fill="#d1d5db"/>
             {/* Lips */}
-            <path d="M45 52 Q50 56 55 52" stroke="#ec4899" strokeWidth="2" fill="none"/>
+            <path d="M45 52 Q50 56 55 52" stroke="#2563eb" strokeWidth="2" fill="none"/>
             {/* Long hair */}
-            <path d="M25 35 Q25 15 50 15 Q75 15 75 35 L75 75 Q70 70 65 75 L60 70 Q55 75 50 70 Q45 75 40 70 L35 75 Q30 70 25 75 Z" fill="#8b5cf6"/>
+            <path d="M25 35 Q25 15 50 15 Q75 15 75 35 L75 75 Q70 70 65 75 L60 70 Q55 75 50 70 Q45 75 40 70 L35 75 Q30 70 25 75 Z" fill="#2563eb"/>
             {/* Curved eyebrows */}
             <path d="M38 33 Q42 31 46 33" stroke="#374151" strokeWidth="1.5" fill="none"/>
             <path d="M54 33 Q58 31 62 33" stroke="#374151" strokeWidth="1.5" fill="none"/>
@@ -65,7 +65,7 @@ export const StyleTypeIcon: React.FC<StyleTypeIconProps> = ({ type, isActive, on
             {/* Mouth */}
             <path d="M45 52 Q50 54 55 52" stroke="#374151" strokeWidth="1.5" fill="none"/>
             {/* Medium length hair */}
-            <path d="M25 35 Q25 18 50 18 Q75 18 75 35 L75 55 Q70 50 65 55 Q60 50 50 50 Q40 50 35 55 Q30 50 25 55 Z" fill="#8b5cf6"/>
+            <path d="M25 35 Q25 18 50 18 Q75 18 75 35 L75 55 Q70 50 65 55 Q60 50 50 50 Q40 50 35 55 Q30 50 25 55 Z" fill="#2563eb"/>
             {/* Neutral eyebrows */}
             <path d="M38 33 L46 33" stroke="#374151" strokeWidth="1.5"/>
             <path d="M54 33 L62 33" stroke="#374151" strokeWidth="1.5"/>
@@ -83,13 +83,13 @@ export const StyleTypeIcon: React.FC<StyleTypeIconProps> = ({ type, isActive, on
         width: '4rem',
         height: '4rem',
         borderRadius: '0.75rem',
-        border: isActive ? '2px solid #8b5cf6' : '2px solid transparent',
+        border: isActive ? '2px solid #60a5fa' : '2px solid transparent',
         background: isActive 
-          ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2))'
+          ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(147, 197, 253, 0.18))'
           : 'rgba(255, 255, 255, 0.7)',
         backdropFilter: 'blur(8px)',
         boxShadow: isActive 
-          ? '0 10px 25px -5px rgba(139, 92, 246, 0.3)' 
+          ? '0 10px 25px -5px rgba(59, 130, 246, 0.28)'
           : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
         transition: 'all 0.3s ease',
         cursor: 'pointer',
@@ -119,7 +119,7 @@ export const StyleTypeIcon: React.FC<StyleTypeIconProps> = ({ type, isActive, on
       <span style={{ 
         fontSize: '0.625rem', 
         fontWeight: '600', 
-        color: isActive ? '#8b5cf6' : '#6b7280',
+        color: isActive ? '#2563eb' : '#6b7280',
         textAlign: 'center'
       }}>
         {type}

@@ -11,7 +11,6 @@ const HairstyleGallery: React.FC = () => {
   const [hairstyles, setHairstyles] = useState<Hairstyle[]>([]);
   const [filteredHairstyles, setFilteredHairstyles] = useState<Hairstyle[]>([]);
   const [filters, setFilters] = useState<Filters>({
-    categories: [],
     lengths: [],
     textures: [],
     face_shapes: [],
@@ -19,7 +18,6 @@ const HairstyleGallery: React.FC = () => {
     poses: []
   });
   const [activeFilters, setActiveFilters] = useState({
-    category: '',
     length: '',
     texture: '',
     face_shape: '',
@@ -45,7 +43,9 @@ const HairstyleGallery: React.FC = () => {
       const response = await fetch(`${API_BASE_URL}/filters`);
       if (!response.ok) throw new Error('Failed to fetch filters');
       const data = await response.json();
-      setFilters(data);
+      // Ensure compatibility if backend still returns categories
+      const { lengths, textures, face_shapes, style_types, poses } = data;
+      setFilters({ lengths, textures, face_shapes, style_types, poses });
     } catch (err) {
       console.error('Error fetching filters:', err);
     }
@@ -91,7 +91,6 @@ const HairstyleGallery: React.FC = () => {
 
   const clearFilters = () => {
     setActiveFilters({
-      category: '',
       length: '',
       texture: '',
       face_shape: '',
@@ -126,15 +125,27 @@ const HairstyleGallery: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Search and Filters */}
-      <div style={{ 
-        background: 'rgba(255, 255, 255, 0.7)', 
-        backdropFilter: 'blur(8px)', 
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(26, 26, 26, 0.95))', 
+        backdropFilter: 'blur(12px)', 
         borderRadius: '1rem', 
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', 
-        border: '1px solid rgba(255, 255, 255, 0.2)', 
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', 
+        border: '2px solid rgba(220, 38, 38, 0.3)', 
         padding: '2rem',
-        marginBottom: '2rem'
+        marginBottom: '2rem',
+        position: 'relative'
       }}>
+        {/* Barbershop accent line */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '4px',
+          background: 'linear-gradient(90deg, #dc2626, #ffffff, #1e40af, #dc2626)',
+          borderRadius: '1rem 1rem 0 0'
+        }} />
+        
         <SearchBar onSearch={handleSearch} />
         <FilterPanel
           filters={filters}
@@ -149,15 +160,17 @@ const HairstyleGallery: React.FC = () => {
         <p style={{ 
           fontSize: '1.25rem', 
           fontWeight: '600', 
-          color: '#374151', 
-          background: 'rgba(255, 255, 255, 0.5)', 
+          color: '#ffffff', 
+          background: 'linear-gradient(45deg, rgba(220, 38, 38, 0.8), rgba(30, 64, 175, 0.8))', 
           backdropFilter: 'blur(8px)', 
           borderRadius: '9999px', 
           padding: '0.75rem 1.5rem', 
           display: 'inline-block', 
-          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' 
+          boxShadow: '0 10px 15px -3px rgba(220, 38, 38, 0.3)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
         }}>
-          {filteredHairstyles.length} beautiful hairstyle{filteredHairstyles.length !== 1 ? 's' : ''} ✨
+          {filteredHairstyles.length} classic cut{filteredHairstyles.length !== 1 ? 's' : ''} ✂️
         </p>
       </div>
 

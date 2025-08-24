@@ -1,7 +1,6 @@
 export interface Hairstyle {
   id: string;
   name: string;
-  category: string;
   length: string;
   texture: string;
   face_shapes: string[];
@@ -16,7 +15,6 @@ export interface Hairstyle {
 }
 
 export interface Filters {
-  categories: string[];
   lengths: string[];
   textures: string[];
   face_shapes: string[];

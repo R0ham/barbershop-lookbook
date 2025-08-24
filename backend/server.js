@@ -32,8 +32,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Routes
 app.get('/api/hairstyles', async (req, res) => {
   try {
-    const { category, length, texture, face_shape, style_type, pose, search } = req.query;
-    const filters = { category, length, texture, face_shape, style_type, pose, search };
+    const { length, texture, face_shape, style_type, pose, search } = req.query;
+    const filters = { length, texture, face_shape, style_type, pose, search };
     const hairstyles = await db.getAllHairstyles(filters);
     res.json(hairstyles);
   } catch (error) {

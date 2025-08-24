@@ -42,9 +42,6 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose }) =
                   {hairstyle.name}
                 </h2>
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="bg-primary-600 text-white px-3 py-1 rounded-full text-sm">
-                    {hairstyle.category}
-                  </span>
                   <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
                     {hairstyle.length}
                   </span>
@@ -98,10 +95,6 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose }) =
                   Hair Details
                 </h3>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Category:</span>
-                    <span className="font-medium">{hairstyle.category}</span>
-                  </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Length:</span>
                     <span className="font-medium">{hairstyle.length}</span>
