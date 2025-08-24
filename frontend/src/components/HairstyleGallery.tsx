@@ -378,9 +378,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   return (
     <div className="flex flex-col gap-6">
       {/* Filters Card (search moved to header in App) */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8 relative">
-        {/* Accent line - subtle blue */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-400 via-gray-200 to-blue-900" />
+      <div className="paper-card perforated-left p-6 mb-8">
         <FilterPanel
           filters={filters}
           activeFilters={activeFilters}
@@ -420,12 +418,12 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       {/* Gallery Grid with client-side pagination */}
       {filteredHairstyles.length === 0 ? (
         <div className="text-center py-16">
-          <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-2xl p-12 max-w-md mx-auto">
+          <div className="paper-card p-10 max-w-md mx-auto">
             <div className="text-4xl mb-4">🔍</div>
             <div className="text-gray-600 text-lg mb-6">No hairstyles match your criteria</div>
             <button
               onClick={clearFilters}
-              className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-3 rounded-full shadow-lg transition-transform duration-300 text-base font-medium hover:from-pink-600 hover:to-purple-700 hover:scale-105"
+              className="bg-blue-600 text-white px-6 py-2.5 rounded-full shadow-sm text-base font-medium hover:bg-blue-700"
             >
               Clear all filters
             </button>
@@ -434,7 +432,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       ) : (
         <>
           <div className="flex justify-center">
-            <div className="grid [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))] gap-8 max-w-7xl w-full">
+            <div className="grid collage-grid [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))] gap-8 max-w-7xl w-full">
               {pageItems.map((hairstyle) => (
                 <HairstyleCard
                   key={hairstyle.id}

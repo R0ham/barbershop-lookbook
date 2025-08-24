@@ -113,11 +113,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
   }
 
   return (
-    <div
-      id={cardId}
-      className="relative bg-white rounded-xl shadow-sm cursor-pointer border border-gray-200"
-      onClick={onClick}
-    >
+    <div id={cardId} className="relative collage-card hs-card cursor-pointer bg-transparent" onClick={onClick}>
       {/* Admin toolbar */}
       {adminMode && (
         <div
@@ -155,146 +151,126 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
           {savedTick && <span className="text-green-600 text-xs">✓</span>}
         </div>
       )}
-      <div className="relative overflow-hidden">
-        <img
-          className="hs-card-img w-full h-80 object-cover object-center"
-          src={hairstyle.image_url}
-          alt={hairstyle.name}
-          loading="lazy"
-          decoding="async"
-          onError={handleImageError}
-          onLoad={handleImageLoad}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300"></div>
-      </div>
-      {/* Small caption under image for attribution (source only) */}
-      {sourceHost && (
-        <div className="px-4 pt-2 text-xs text-gray-500 text-right">
-          <a
-            href={hairstyle.image_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => { e.stopPropagation(); }}
-            className="hover:underline hover:text-gray-700"
-            title={`Open source: ${sourceHost}`}
-          >
-            {sourceHost}
-          </a>
+      <div className="flex flex-col gap-2 md:gap-3 p-0 bg-transparent">
+        {/* Image */}
+        <div className="photo-frame overflow-hidden">
+          <img
+            className="hs-card-img w-full h-80 object-cover object-center"
+            src={hairstyle.image_url}
+            alt={hairstyle.name}
+            loading="lazy"
+            decoding="async"
+            onError={handleImageError}
+            onLoad={handleImageLoad}
+          />
+          {sourceHost && (
+            <div className="pt-2 text-[11px] text-gray-500 text-right">
+              <a
+                href={hairstyle.image_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => { e.stopPropagation(); }}
+                className="hover:underline hover:text-gray-700"
+                title={`Open source: ${sourceHost}`}
+              >
+                {sourceHost}
+              </a>
+            </div>
+          )}
         </div>
-      )}
-      
-      <div className="p-6">
-        <h3 className="font-bold text-xl text-gray-900 mb-3 transition-colors duration-300">
-          {hairstyle.name}
-        </h3>
-        
-        <p className="text-gray-600 text-sm mb-4 leading-6 line-clamp-2">
-          {hairstyle.description}
-        </p>
-
-        {/* Attribute pills with minimal icons (colorized) - now clickable */}
-        <div className="flex flex-wrap gap-2 mb-3">
-          {/* Length */}
-          {!isAny(hairstyle.length) && (
-          <span
-            onMouseDown={(e) => { e.preventDefault(); }}
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('length', hairstyle.length, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('length', hairstyle.length, cardId); animatePill(e.currentTarget as HTMLElement); } }}
-            className={pillStyles('length', isSelected('length', hairstyle.length)).className}
-          >
-            {getMinimalIcon('length', hairstyle.length, 20, pillStyles('length', isSelected('length', hairstyle.length)).icon)}
-            {hairstyle.length}
-          </span>
-          )}
-          {/* Texture */}
-          {!isAny(hairstyle.texture) && (
-          <span
-            onMouseDown={(e) => { e.preventDefault(); }}
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('texture', hairstyle.texture, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('texture', hairstyle.texture, cardId); animatePill(e.currentTarget as HTMLElement); } }}
-            className={pillStyles('texture', isSelected('texture', hairstyle.texture)).className}
-          >
-            {getMinimalIcon('texture', hairstyle.texture, 20, pillStyles('texture', isSelected('texture', hairstyle.texture)).icon)}
-            {hairstyle.texture}
-          </span>
-          )}
-          {/* Type */}
-          {!isAny(hairstyle.style_type) && (
-          <span
-            onMouseDown={(e) => { e.preventDefault(); }}
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('style_type', hairstyle.style_type, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('style_type', hairstyle.style_type, cardId); animatePill(e.currentTarget as HTMLElement); } }}
-            className={pillStyles('style_type', isSelected('style_type', hairstyle.style_type)).className}
-          >
-            {getMinimalIcon('style', hairstyle.style_type, 20, pillStyles('style_type', isSelected('style_type', hairstyle.style_type)).icon)}
-            {hairstyle.style_type}
-          </span>
-          )}
-          {/* Pose */}
-          {!isAny(hairstyle.pose) && (
-          <span
-            onMouseDown={(e) => { e.preventDefault(); }}
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('pose', hairstyle.pose, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('pose', hairstyle.pose, cardId); animatePill(e.currentTarget as HTMLElement); } }}
-            className={pillStyles('pose', isSelected('pose', hairstyle.pose)).className}
-          >
-            {getMinimalIcon('pose', hairstyle.pose, 20, pillStyles('pose', isSelected('pose', hairstyle.pose)).icon)}
-            {hairstyle.pose}
-          </span>
-          )}
-          {/* Face shapes + Ethnicity overflow: show up to 2, fold rest into +N more */}
-          {(facesExpanded ? extraItemsAll : extraItemsAll.slice(0, 2)).map((item) => {
-            const isEth = item.startsWith('__ETH__:');
-            const val = isEth ? item.replace('__ETH__:', '') : item;
-            if (isEth) {
+        {/* Description */}
+        <div className="paper-sheet p-4 md:p-5">
+          <h3 className="font-bold text-xl text-gray-900 mb-3 transition-colors duration-300">{hairstyle.name}</h3>
+          <p className="text-gray-600 text-sm mb-4 leading-6 line-clamp-2">{hairstyle.description}</p>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {/* Length */}
+            {!isAny(hairstyle.length) && (
+              <span
+                onMouseDown={(e) => { e.preventDefault(); }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('length', hairstyle.length, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('length', hairstyle.length, cardId); animatePill(e.currentTarget as HTMLElement); } }}
+                className={pillStyles('length', isSelected('length', hairstyle.length)).className}
+              >
+                {getMinimalIcon('length', hairstyle.length, 20, pillStyles('length', isSelected('length', hairstyle.length)).icon)}
+                {hairstyle.length}
+              </span>
+            )}
+            {/* Texture */}
+            {!isAny(hairstyle.texture) && (
+              <span
+                onMouseDown={(e) => { e.preventDefault(); }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('texture', hairstyle.texture, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('texture', hairstyle.texture, cardId); animatePill(e.currentTarget as HTMLElement); } }}
+                className={pillStyles('texture', isSelected('texture', hairstyle.texture)).className}
+              >
+                {getMinimalIcon('texture', hairstyle.texture, 20, pillStyles('texture', isSelected('texture', hairstyle.texture)).icon)}
+                {hairstyle.texture}
+              </span>
+            )}
+            {/* Type */}
+            {!isAny(hairstyle.style_type) && (
+              <span
+                onMouseDown={(e) => { e.preventDefault(); }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('style_type', hairstyle.style_type, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('style_type', hairstyle.style_type, cardId); animatePill(e.currentTarget as HTMLElement); } }}
+                className={pillStyles('style_type', isSelected('style_type', hairstyle.style_type)).className}
+              >
+                {getMinimalIcon('style', hairstyle.style_type, 20, pillStyles('style_type', isSelected('style_type', hairstyle.style_type)).icon)}
+                {hairstyle.style_type}
+              </span>
+            )}
+            {/* Pose */}
+            {!isAny(hairstyle.pose) && (
+              <span
+                onMouseDown={(e) => { e.preventDefault(); }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('pose', hairstyle.pose, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('pose', hairstyle.pose, cardId); animatePill(e.currentTarget as HTMLElement); } }}
+                className={pillStyles('pose', isSelected('pose', hairstyle.pose)).className}
+              >
+                {getMinimalIcon('pose', hairstyle.pose, 20, pillStyles('pose', isSelected('pose', hairstyle.pose)).icon)}
+                {hairstyle.pose}
+              </span>
+            )}
+            {/* Face shapes + Ethnicity overflow: show up to 2, fold rest into +N more */}
+            {(facesExpanded ? extraItemsAll : extraItemsAll.slice(0, 2)).map((item) => {
+              const isEth = item.startsWith('__ETH__:');
+              const val = isEth ? item.replace('__ETH__:', '') : item;
               return (
-                <span key={`eth-${val}`}
+                <span
+                  key={(isEth ? 'eth-' : 'face-') + val}
                   onMouseDown={(e) => { e.preventDefault(); }}
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('ethnicity', val, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter(isEth ? 'ethnicity' : 'face_shape', val, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('ethnicity', val, cardId); animatePill(e.currentTarget as HTMLElement); } }}
-                  className={pillStyles('ethnicity', isSelected('ethnicity', val)).className}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter(isEth ? 'ethnicity' : 'face_shape', val, cardId); animatePill(e.currentTarget as HTMLElement); } }}
+                  className={pillStyles(isEth ? 'ethnicity' : 'face_shape', isSelected(isEth ? 'ethnicity' : 'face_shape', val)).className}
                 >
-                  {getMinimalIcon('ethnicity', val, 20, pillStyles('ethnicity', isSelected('ethnicity', val)).icon)}
+                  {getMinimalIcon(isEth ? 'ethnicity' : 'face', val, 20, pillStyles(isEth ? 'ethnicity' : 'face_shape', isSelected(isEth ? 'ethnicity' : 'face_shape', val)).icon)}
                   {val}
                 </span>
               );
-            }
-            return (
-              <span key={val}
+            })}
+            {!facesExpanded && extraItemsAll.length > 2 && (
+              <span
                 onMouseDown={(e) => { e.preventDefault(); }}
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('face_shape', val, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setFacesExpanded(true); (e.currentTarget as HTMLElement)?.blur?.(); }}
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('face_shape', val, cardId); animatePill(e.currentTarget as HTMLElement); } }}
-                className={pillStyles('face_shape', isSelected('face_shape', val)).className}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); setFacesExpanded(true); } }}
+                className="px-3 py-1.5 rounded-full border-2 border-gray-200 bg-white/90 text-gray-700 text-[0.8rem] font-medium cursor-pointer select-none"
               >
-                {getMinimalIcon('face', val, 20, pillStyles('face_shape', isSelected('face_shape', val)).icon)}
-                {val}
+                +{extraItemsAll.length - 2} more
               </span>
-            );
-          })}
-          {(!facesExpanded && extraItemsAll.length > 2) && (
-            <span
-              onMouseDown={(e) => { e.preventDefault(); }}
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setFacesExpanded(true); (e.currentTarget as HTMLElement)?.blur?.(); }}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); setFacesExpanded(true); } }}
-              className="px-3 py-1.5 rounded-full border-2 border-gray-200 bg-white/90 text-gray-700 text-[0.8rem] font-medium cursor-pointer select-none"
-            >
-              +{extraItemsAll.length - 2} more
-            </span>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

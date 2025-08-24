@@ -26,9 +26,9 @@ body {
 
 .hs-card:hover,
 .hs-card:focus-within {
-  transform: translateZ(0) scale(1.03);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
-  background: rgba(255, 255, 255, 0.9);
+  transform: translateZ(0) scale(1.01);
+  box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.96);
 }
 
 .hs-card-img {
@@ -49,4 +49,138 @@ body {
   .hs-card-img {
     transition: none !important;
   }
+}
+
+/* Scrapbook theme utilities (minimal, modern, flat) */
+/* Subtle crosshatch paper background (distinct from dot grid) */
+.scrapbook-bg {
+  background-color: #fbfaf7; /* warmer off-white */
+  background-image:
+    linear-gradient(rgba(24, 24, 24, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(24, 24, 24, 0.028) 1px, transparent 1px);
+  background-size: 26px 26px, 26px 26px;
+  background-position: 0 0, 0 0;
+}
+
+/* Clean paper card */
+.paper-card {
+  background-color: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08); /* slate-900 @ 8% */
+  border-radius: 0.75rem; /* rounded-xl */
+  box-shadow: 0 6px 16px -10px rgba(0,0,0,0.18);
+}
+
+/* Small washi tape at top center */
+.taped {
+  position: relative;
+}
+.taped::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 72px;
+  height: 18px;
+  background: linear-gradient(
+    to bottom,
+    rgba(245, 222, 179, 0.7), /* warm beige */
+    rgba(245, 222, 179, 0.55)
+  );
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12), inset 0 0 0 1px rgba(255,255,255,0.35);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Photo frame wrapper for images */
+.photo-frame {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 0.75rem;
+  /* Softer, more ambient base shadow */
+  box-shadow: 0 6px 16px -10px rgba(0,0,0,0.18), 0 2px 6px -4px rgba(0,0,0,0.10);
+  padding: 0.5rem; /* 8px */
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.photo-frame > img {
+  border-radius: 0.5rem;
+}
+
+/* Inner paper sheets used inside a card */
+.paper-sheet {
+  background-color: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 0.75rem;
+  /* Softer base shadow matching photo-frame */
+  box-shadow: 0 5px 14px -10px rgba(0,0,0,0.16), 0 2px 5px -4px rgba(0,0,0,0.10);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+/* Corner tab stickers (replaces single tape strip) */
+.corner-tabs { position: relative; }
+.corner-tabs::before,
+.corner-tabs::after {
+  content: "";
+  position: absolute;
+  top: -8px;
+  width: 28px;
+  height: 18px;
+  background: linear-gradient(to bottom, rgba(254, 240, 138, 0.85), rgba(254, 240, 138, 0.7)); /* amber-200 */
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.10), inset 0 0 0 1px rgba(255,255,255,0.35);
+  border-radius: 2px;
+  pointer-events: none;
+}
+.corner-tabs::before { left: 10px; transform: rotate(-6deg); }
+.corner-tabs::after  { right: 10px; transform: rotate(6deg); }
+
+/* Perforated left binding strip for filter panel */
+.perforated-left { position: relative; }
+.perforated-left::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 12px;
+  bottom: 12px;
+  width: 10px;
+  background:
+    radial-gradient(circle at 50% 8px, rgba(0,0,0,0.08) 0, rgba(0,0,0,0.08) 2px, transparent 2px) 0 0 / 10px 22px repeat-y,
+    linear-gradient(#ffffff, #ffffff);
+  border-left: 1px solid rgba(0,0,0,0.08);
+  border-right: 1px solid rgba(0,0,0,0.08);
+  border-radius: 2px;
+}
+
+/* Slight alternating tilt for a collage feel: rotate only the photo-frame (not the tile) */
+.collage-grid > .collage-card .photo-frame { transition: transform 200ms ease; }
+.collage-grid > .collage-card:nth-of-type(odd)  .photo-frame { transform: rotate(-0.6deg); }
+.collage-grid > .collage-card:nth-of-type(even) .photo-frame { transform: rotate(0.4deg); }
+.collage-grid > .collage-card:hover .photo-frame { transform: rotate(0deg) scale(1.01); }
+
+/* Do not paint white background on hover for collage cards */
+.collage-card.hs-card:hover,
+.collage-card.hs-card:focus-within {
+  background: transparent !important;
+  box-shadow: none !important; /* do not shadow the parent */
+}
+
+/* Increase shadow on inner elements when card is hovered/focused */
+.collage-card.hs-card:hover .photo-frame,
+.collage-card.hs-card:focus-within .photo-frame {
+  /* Subtle lift with diffused spread */
+  box-shadow:
+    0 10px 28px -10px rgba(0,0,0,0.10), /* main spread */
+    0 0 24px -6px rgba(0,0,0,0.10),     /* halo */
+    0 2px 6px -2px rgba(0,0,0,0.10);     /* contact */
+  transform: translateY(-1px) rotate(0deg) scale(1.006);
+}
+
+.collage-card.hs-card:hover .paper-sheet,
+.collage-card.hs-card:focus-within .paper-sheet {
+  box-shadow:
+    0 8px 22px -10px rgba(0,0,0,0.10),  /* main spread */
+    0 0 20px -8px rgba(0,0,0,0.10),     /* halo */
+    0 1px 4px -2px rgba(0,0,0,0.10);     /* contact */
+  transform: translateY(-1px);
 }
