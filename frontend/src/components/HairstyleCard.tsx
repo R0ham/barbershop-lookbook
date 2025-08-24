@@ -118,14 +118,15 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
       {/* Admin toolbar */}
       {adminMode && (
         <div
-          className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur rounded-md border border-gray-200 shadow px-2 py-1 flex items-center gap-2"
+          className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur rounded-md border border-gray-200 shadow px-2 py-1 flex items-center gap-2 cursor-default"
           onClick={(e) => { e.stopPropagation(); }}
-          onMouseDown={(e) => { e.preventDefault(); }}
         >
           <label className="text-xs text-gray-600">Ethnicity</label>
           <select
             className="text-xs border-gray-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
             value={pendingEth}
+            onClick={(e) => { e.stopPropagation(); }}
+            onMouseDown={(e) => { e.stopPropagation(); }}
             onChange={(e) => { setPendingEth(e.target.value); setSavedTick(false); }}
           >
             <option value="">—</option>
@@ -137,7 +138,6 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
             className="text-xs px-2 py-0.5 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
             disabled={(pendingEth || '') === (hairstyle.ethnicity || '')}
             onClick={(e) => {
-              e.preventDefault();
               e.stopPropagation();
               if (onUpdateEthnicity) {
                 onUpdateEthnicity(String(hairstyle.id), pendingEth);
