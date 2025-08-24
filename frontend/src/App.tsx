@@ -1,7 +1,9 @@
 import React from 'react';
 import HairstyleGallery from './components/HairstyleGallery';
+import SearchBar from './components/SearchBar';
 
 function App() {
+  const [headerSearch, setHeaderSearch] = React.useState<string>('');
   return (
     <div
       style={{
@@ -49,6 +51,7 @@ function App() {
             }}
           >
             Barbershop Lookbook
+            <span aria-hidden style={{ marginLeft: '0.4rem' }}>✂️</span>
           </h1>
         </div>
         <p
@@ -61,6 +64,10 @@ function App() {
         >
           See through the glass into a clean, modern shop. Find your cut.
         </p>
+        {/* Header Search - under subtitle */}
+        <div style={{ marginTop: '0.75rem' }}>
+          <SearchBar onSearch={setHeaderSearch} maxWidth="28rem" />
+        </div>
       </header>
       
       {/* Glass storefront frame around content */}
@@ -105,7 +112,7 @@ function App() {
           }}
         >
           <main style={{ maxWidth: '72rem', margin: '0 auto' }}>
-            <HairstyleGallery />
+            <HairstyleGallery headerSearch={headerSearch} />
           </main>
         </div>
       </div>

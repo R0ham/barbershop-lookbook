@@ -2,12 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Hairstyle, Filters } from '../types';
 import HairstyleCard from './HairstyleCard';
 import FilterPanel from './FilterPanel';
-import SearchBar from './SearchBar';
 import HairstyleModal from './HairstyleModal';
 
 const API_BASE_URL = 'http://localhost:5001/api';
 
-const HairstyleGallery: React.FC = () => {
+const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch }) => {
   const [hairstyles, setHairstyles] = useState<Hairstyle[]>([]);
   const [filteredHairstyles, setFilteredHairstyles] = useState<Hairstyle[]>([]);
   const [filters, setFilters] = useState<Filters>({
@@ -51,6 +50,14 @@ const HairstyleGallery: React.FC = () => {
   useEffect(() => {
     setPage(1);
   }, [lengthDep, textureDep, faceDep, styleDep, poseDep, activeFilters.search]);
+
+  // If headerSearch prop changes, run the existing search handler to sync filters
+  useEffect(() => {
+    if (typeof headerSearch === 'string') {
+      handleSearch(headerSearch);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [headerSearch]);
 
   // Pagination derived values
   const total = filteredHairstyles.length;
@@ -272,7 +279,7 @@ const HairstyleGallery: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Search and Filters */}
+      {/* Filters Card (search moved to header in App) */}
       <div style={{
         background: '#ffffff',
         borderRadius: '1rem',
@@ -292,8 +299,6 @@ const HairstyleGallery: React.FC = () => {
           height: '6px',
           background: 'linear-gradient(90deg, #60a5fa, #e5e7eb, #1e40af, #60a5fa)'
         }} />
-
-        <SearchBar onSearch={handleSearch} />
         <FilterPanel
           filters={filters}
           activeFilters={activeFilters}
@@ -362,7 +367,6 @@ const HairstyleGallery: React.FC = () => {
                 <span>{filteredHairstyles.length} classic cut{filteredHairstyles.length !== 1 ? 's' : ''}</span>
                 {hasActive && <span aria-hidden>•</span>}
                 {hasActive && <span style={{ color: 'inherit', fontWeight: 600 }}>Clear all</span>}
-                <span aria-hidden>✂️</span>
               </>
             );
           })()}

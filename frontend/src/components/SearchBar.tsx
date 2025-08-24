@@ -2,9 +2,10 @@ import React, { useRef, useState } from 'react';
 
 interface SearchBarProps {
   onSearch: (searchTerm: string) => void;
+  maxWidth?: string | number;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
+const SearchBar: React.FC<SearchBarProps> = ({ onSearch, maxWidth }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -19,9 +20,25 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
   };
 
   return (
-    <div className="mb-8">
-      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto">
-        <div className="flex items-stretch rounded-2xl border border-gray-200 shadow-sm overflow-hidden bg-white">
+    <div style={{ marginBottom: '1.5rem' }}>
+      <form onSubmit={handleSubmit} style={{ maxWidth: maxWidth ?? '42rem', margin: '0 auto' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            borderRadius: '9999px',
+            border: '2px solid #e5e7eb',
+            background: 'rgba(255, 255, 255, 0.9)',
+            padding: '0.5rem 0.5rem 0.5rem 0.75rem',
+          }}
+        >
+          <span aria-hidden style={{ display: 'inline-flex', color: '#64748b' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </span>
           <input
             ref={inputRef}
             type="text"
@@ -29,16 +46,49 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             aria-label="Search hairstyles"
-            className="flex-1 px-2 md:px-3 py-3 md:py-4 text-base md:text-lg placeholder-gray-400 focus:outline-none focus:ring-0 border-0"
+            style={{
+              flex: 1,
+              padding: '0.6rem 0.5rem',
+              fontSize: '1rem',
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              color: '#111827'
+            }}
           />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={handleClear}
+              title="Clear"
+              style={{
+                padding: '0.35rem 0.75rem',
+                borderRadius: '9999px',
+                border: '2px solid #e5e7eb',
+                background: 'rgba(255, 255, 255, 0.9)',
+                color: '#374151',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                cursor: 'pointer'
+              }}
+            >
+              Clear
+            </button>
+          )}
           <button
             type="submit"
             aria-label="Submit search"
-            className="px-5 md:px-6 text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 focus:ring-4 focus:ring-blue-200 transition-all duration-150"
+            style={{
+              padding: '0.5rem 0.9rem',
+              borderRadius: '9999px',
+              border: '2px solid #60a5fa',
+              background: 'rgba(59, 130, 246, 0.12)',
+              color: '#2563eb',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
           >
-            <svg className="h-5 w-5 md:h-5 md:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+            Search
           </button>
         </div>
       </form>
