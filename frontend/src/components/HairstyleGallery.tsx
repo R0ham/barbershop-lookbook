@@ -18,11 +18,11 @@ const HairstyleGallery: React.FC = () => {
     poses: []
   });
   const [activeFilters, setActiveFilters] = useState({
-    length: '',
-    texture: '',
-    face_shape: '',
-    style_type: '',
-    pose: '',
+    length: [] as string[],
+    texture: [] as string[],
+    face_shape: [] as string[],
+    style_type: [] as string[],
+    pose: [] as string[],
     search: ''
   });
   const [selectedHairstyle, setSelectedHairstyle] = useState<Hairstyle | null>(null);
@@ -34,9 +34,16 @@ const HairstyleGallery: React.FC = () => {
     fetchHairstyles();
   }, []);
 
+  // Refetch when filters or search change (stable primitive deps)
+  const lengthDep = activeFilters.length.join(',');
+  const textureDep = activeFilters.texture.join(',');
+  const faceDep = activeFilters.face_shape.join(',');
+  const styleDep = activeFilters.style_type.join(',');
+  const poseDep = activeFilters.pose.join(',');
   useEffect(() => {
     fetchHairstyles();
-  }, [activeFilters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lengthDep, textureDep, faceDep, styleDep, poseDep, activeFilters.search]);
 
   const fetchFilters = async () => {
     try {
@@ -55,9 +62,13 @@ const HairstyleGallery: React.FC = () => {
     try {
       setLoading(true);
       const queryParams = new URLSearchParams();
-      
+
       Object.entries(activeFilters).forEach(([key, value]) => {
-        if (value) queryParams.append(key, value);
+        if (Array.isArray(value)) {
+          if (value.length > 0) queryParams.append(key, value.join(','));
+        } else if (value) {
+          queryParams.append(key, value);
+        }
       });
 
       const response = await fetch(`${API_BASE_URL}/hairstyles?${queryParams}`);
@@ -75,27 +86,146 @@ const HairstyleGallery: React.FC = () => {
     }
   };
 
-  const handleFilterChange = (filterType: string, value: string) => {
-    setActiveFilters(prev => ({
-      ...prev,
-      [filterType]: value
-    }));
+  const shallowArrayEqual = (a: string[] | undefined, b: string[] | undefined) => {
+    if (a === b) return true;
+    if (!a || !b) return false;
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+  };
+
+  const handleFilterChange = (filterType: string, value: string | string[]) => {
+    setActiveFilters(prev => {
+      const prevVal = (prev as any)[filterType];
+      if (Array.isArray(value) && Array.isArray(prevVal)) {
+        if (shallowArrayEqual(prevVal, value)) return prev; // no change
+      } else if (!Array.isArray(value) && !Array.isArray(prevVal)) {
+        if (prevVal === value) return prev; // no change
+      }
+      return { ...prev, [filterType]: value } as typeof prev;
+    });
   };
 
   const handleSearch = (searchTerm: string) => {
-    setActiveFilters(prev => ({
-      ...prev,
-      search: searchTerm
-    }));
+    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '');
+    const rawTokens = searchTerm.split(/\s+/).map(t => t.trim()).filter(Boolean);
+    const normTokens = rawTokens.map(normalize);
+
+    // Build option maps for exact lookup and arrays for partial matching
+    const makeMap = (opts: string[]) => {
+      const m = new Map<string, string>();
+      opts.forEach(o => m.set(normalize(o), o));
+      return m;
+    };
+    const lengths = filters.lengths || [];
+    const textures = (filters.textures || []).filter(t => t !== 'Any' && t !== 'any');
+    const faces = filters.face_shapes || [];
+    const styles = filters.style_types || [];
+    const poses = filters.poses || [];
+
+    const lengthMap = makeMap(lengths);
+    const textureMap = makeMap(textures);
+    const faceMap = makeMap(faces);
+    const styleMap = makeMap(styles);
+    const poseMap = makeMap(poses);
+
+    const matched = {
+      length: [] as string[],
+      texture: [] as string[],
+      face_shape: [] as string[],
+      style_type: [] as string[],
+      pose: [] as string[],
+    };
+
+    // Phrase/alias rules (extendable)
+    const phraseRules: Array<{ test: (s: string) => boolean; apply: () => void; consume?: string[] }>
+      = [
+        { test: s => /\bpixie\s*cut\b/.test(s), apply: () => { if (lengths.includes('Short')) matched.length.push('Short'); if (styles.includes('Feminine')) matched.style_type.push('Feminine'); }, consume: ['pixie','cut'] },
+        { test: s => /\bbuzz\s*cut\b/.test(s), apply: () => { if (lengths.includes('Short')) matched.length.push('Short'); }, consume: ['buzz','cut'] },
+        { test: s => /\bbob(\s*cut)?\b/.test(s), apply: () => { if (lengths.includes('Short')) matched.length.push('Short'); if (styles.includes('Feminine')) matched.style_type.push('Feminine'); }, consume: ['bob','cut'] },
+        { test: s => /\bshoulder\s*length\b/.test(s), apply: () => { if (lengths.includes('Medium')) matched.length.push('Medium'); }, consume: ['shoulder','length'] },
+        { test: s => /\blong\s*hair\b/.test(s), apply: () => { if (lengths.includes('Long')) matched.length.push('Long'); }, consume: ['long','hair'] },
+        { test: s => /\bside\s*(profile|view)\b/.test(s), apply: () => { if (poses.includes('Side')) matched.pose.push('Side'); }, consume: ['side','profile','view'] },
+        { test: s => /\b(straight[-\s]*on|front\s*facing)\b/.test(s), apply: () => { if (poses.includes('Straight-on')) matched.pose.push('Straight-on'); }, consume: ['straight','on','front','facing'] },
+        { test: s => /\b(angled\s*view|three\s*quarter|3\/4)\b/.test(s), apply: () => { if (poses.includes('Angled')) matched.pose.push('Angled'); }, consume: ['angled','view','three','quarter'] },
+      ];
+
+    const lowerStr = ` ${rawTokens.join(' ').toLowerCase()} `;
+    const consumed = new Set<string>();
+    phraseRules.forEach(rule => {
+      try {
+        if (rule.test(lowerStr)) {
+          rule.apply();
+          (rule.consume || []).forEach(w => consumed.add(normalize(w)));
+        }
+      } catch {}
+    });
+
+    // Helper to try matching a token to an options list (exact then partial)
+    const tryMatch = (tokenNorm: string, options: string[], map: Map<string,string>): string | null => {
+      if (map.has(tokenNorm)) return map.get(tokenNorm)!;
+      if (tokenNorm.length >= 3) {
+        // startsWith (token -> option) or (option -> token)
+        const hit = options.find(o => {
+          const on = normalize(o);
+          return on.startsWith(tokenNorm) || tokenNorm.startsWith(on);
+        });
+        if (hit) return hit;
+      }
+      return null;
+    };
+
+    const remaining: string[] = [];
+    rawTokens.forEach((tok, idx) => {
+      const n = normTokens[idx];
+      if (consumed.has(n)) return; // consumed by a phrase
+      // Try each category
+      const l = tryMatch(n, lengths, lengthMap);
+      if (l) { matched.length.push(l); return; }
+      const t = tryMatch(n, textures, textureMap);
+      if (t) { matched.texture.push(t); return; }
+      const f = tryMatch(n, faces, faceMap);
+      if (f) { matched.face_shape.push(f); return; }
+      const s = tryMatch(n, styles, styleMap);
+      if (s) { matched.style_type.push(s); return; }
+      const p = tryMatch(n, poses, poseMap);
+      if (p) { matched.pose.push(p); return; }
+      remaining.push(tok);
+    });
+
+    // Deduplicate and merge with existing active filters
+    setActiveFilters(prev => {
+      const mergeUnique = (a: string[], b: string[]) => Array.from(new Set([...(a || []), ...b]));
+      const next = {
+        ...prev,
+        length: mergeUnique(prev.length, matched.length),
+        texture: mergeUnique(prev.texture, matched.texture),
+        face_shape: mergeUnique(prev.face_shape, matched.face_shape),
+        style_type: mergeUnique(prev.style_type, matched.style_type),
+        pose: mergeUnique(prev.pose, matched.pose),
+        search: remaining.join(' ')
+      };
+
+      const noChange =
+        shallowArrayEqual(prev.length, next.length) &&
+        shallowArrayEqual(prev.texture, next.texture) &&
+        shallowArrayEqual(prev.face_shape, next.face_shape) &&
+        shallowArrayEqual(prev.style_type, next.style_type) &&
+        shallowArrayEqual(prev.pose, next.pose) &&
+        prev.search === next.search;
+      return noChange ? prev : next;
+    });
   };
 
   const clearFilters = () => {
     setActiveFilters({
-      length: '',
-      texture: '',
-      face_shape: '',
-      style_type: '',
-      pose: '',
+      length: [],
+      texture: [],
+      face_shape: [],
+      style_type: [],
+      pose: [],
       search: ''
     });
   };
@@ -126,26 +256,25 @@ const HairstyleGallery: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* Search and Filters */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(45, 45, 45, 0.95), rgba(26, 26, 26, 0.95))', 
-        backdropFilter: 'blur(12px)', 
-        borderRadius: '1rem', 
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)', 
-        border: '2px solid rgba(220, 38, 38, 0.3)', 
+        background: '#ffffff',
+        borderRadius: '1rem',
+        boxShadow: '0 10px 20px rgba(0,0,0,0.08)',
+        border: '1px solid #e5e7eb',
         padding: '2rem',
         marginBottom: '2rem',
-        position: 'relative'
+        position: 'relative',
+        overflow: 'hidden' // clip accent to follow rounded corners
       }}>
-        {/* Barbershop accent line */}
+        {/* Accent line - subtle blue */}
         <div style={{
           position: 'absolute',
           top: 0,
           left: 0,
           right: 0,
-          height: '4px',
-          background: 'linear-gradient(90deg, #dc2626, #ffffff, #1e40af, #dc2626)',
-          borderRadius: '1rem 1rem 0 0'
+          height: '6px',
+          background: 'linear-gradient(90deg, #60a5fa, #e5e7eb, #1e40af, #60a5fa)'
         }} />
-        
+
         <SearchBar onSearch={handleSearch} />
         <FilterPanel
           filters={filters}
@@ -155,23 +284,44 @@ const HairstyleGallery: React.FC = () => {
         />
       </div>
 
-      {/* Results Count */}
+      {/* Results Count / Clear All */}
       <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <p style={{ 
-          fontSize: '1.25rem', 
-          fontWeight: '600', 
-          color: '#ffffff', 
-          background: 'linear-gradient(45deg, rgba(220, 38, 38, 0.8), rgba(30, 64, 175, 0.8))', 
-          backdropFilter: 'blur(8px)', 
-          borderRadius: '9999px', 
-          padding: '0.75rem 1.5rem', 
-          display: 'inline-block', 
-          boxShadow: '0 10px 15px -3px rgba(220, 38, 38, 0.3)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          textShadow: '1px 1px 2px rgba(0, 0, 0, 0.5)'
-        }}>
-          {filteredHairstyles.length} classic cut{filteredHairstyles.length !== 1 ? 's' : ''} ✂️
-        </p>
+        <button
+          onClick={clearFilters}
+          title="Clear all filters"
+          style={{ 
+            fontSize: '1.0rem', 
+            fontWeight: 600, 
+            color: '#1f2937',
+            background: 'linear-gradient(45deg, rgba(96, 165, 250, 0.15), rgba(30, 64, 175, 0.12))',
+            borderRadius: '9999px',
+            padding: '0.6rem 1.25rem',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            boxShadow: '0 6px 12px rgba(0,0,0,0.06)',
+            border: '1px solid #e5e7eb',
+            cursor: 'pointer'
+          }}
+        >
+          {(() => {
+            const hasActive =
+              activeFilters.length.length > 0 ||
+              activeFilters.texture.length > 0 ||
+              activeFilters.face_shape.length > 0 ||
+              activeFilters.style_type.length > 0 ||
+              activeFilters.pose.length > 0 ||
+              (activeFilters.search?.trim() ?? '') !== '';
+            return (
+              <>
+                <span>{filteredHairstyles.length} classic cut{filteredHairstyles.length !== 1 ? 's' : ''}</span>
+                {hasActive && <span aria-hidden>•</span>}
+                {hasActive && <span style={{ color: '#2563eb', fontWeight: 600 }}>Clear all</span>}
+                <span aria-hidden>✂️</span>
+              </>
+            );
+          })()}
+        </button>
       </div>
 
       {/* Gallery Grid */}

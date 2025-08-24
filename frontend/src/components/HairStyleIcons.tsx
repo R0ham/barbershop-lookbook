@@ -11,7 +11,7 @@ const HairStyleIcons: React.FC<HairStyleIconProps> = ({
   type, 
   style, 
   size = 24, 
-  color = '#ec4899' 
+  color = '#2563eb' 
 }) => {
   const iconStyle = {
     width: size,
@@ -73,83 +73,36 @@ const HairStyleIcons: React.FC<HairStyleIconProps> = ({
   }
 
   if (type === 'texture') {
+    // Minimal hair follicle icon: bulb with a single strand path
+    const bulb = <circle cx="12" cy="18" r="2.2" fill={color} fillOpacity="0.15" stroke={color} strokeWidth="1.5"/>;
+    const root = <line x1="12" y1="18" x2="12" y2="22" stroke={color} strokeWidth="1.2" strokeLinecap="round"/>;
+    const common = (strand: React.ReactNode) => (
+      <svg style={iconStyle} viewBox="0 0 24 24" fill="none">
+        {strand}
+        {bulb}
+        {root}
+      </svg>
+    );
+
     switch (style.toLowerCase()) {
-      case 'straight':
-        return (
-          <svg style={iconStyle} viewBox="0 0 24 24" fill="none">
-            {/* Face outline */}
-            <ellipse cx="12" cy="14" rx="5" ry="7" fill="none" stroke={color} strokeWidth="1.5"/>
-            {/* Straight hair strands */}
-            <path d="M7 6 L7 18" stroke={color} strokeWidth="2" strokeLinecap="round"/>
-            <path d="M9 5 L9 17" stroke={color} strokeWidth="2" strokeLinecap="round"/>
-            <path d="M12 4 L12 16" stroke={color} strokeWidth="2" strokeLinecap="round"/>
-            <path d="M15 5 L15 17" stroke={color} strokeWidth="2" strokeLinecap="round"/>
-            <path d="M17 6 L17 18" stroke={color} strokeWidth="2" strokeLinecap="round"/>
-            {/* Eyes */}
-            <circle cx="10" cy="12" r="0.7" fill={color}/>
-            <circle cx="14" cy="12" r="0.7" fill={color}/>
-          </svg>
-        );
-
-      case 'wavy':
-        return (
-          <svg style={iconStyle} viewBox="0 0 24 24" fill="none">
-            {/* Face outline */}
-            <ellipse cx="12" cy="14" rx="5" ry="7" fill="none" stroke={color} strokeWidth="1.5"/>
-            {/* Wavy hair strands */}
-            <path d="M7 6 Q8 8 7 10 Q6 12 7 14 Q8 16 7 18" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>
-            <path d="M9 5 Q10 7 9 9 Q8 11 9 13 Q10 15 9 17" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>
-            <path d="M12 4 Q13 6 12 8 Q11 10 12 12 Q13 14 12 16" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>
-            <path d="M15 5 Q16 7 15 9 Q14 11 15 13 Q16 15 15 17" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>
-            <path d="M17 6 Q18 8 17 10 Q16 12 17 14 Q18 16 17 18" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>
-            {/* Eyes */}
-            <circle cx="10" cy="12" r="0.7" fill={color}/>
-            <circle cx="14" cy="12" r="0.7" fill={color}/>
-          </svg>
-        );
-
-      case 'curly':
-        return (
-          <svg style={iconStyle} viewBox="0 0 24 24" fill="none">
-            {/* Face outline */}
-            <ellipse cx="12" cy="14" rx="5" ry="7" fill="none" stroke={color} strokeWidth="1.5"/>
-            {/* Curly hair - spiral patterns */}
-            <circle cx="8" cy="7" r="1.5" fill="none" stroke={color} strokeWidth="2"/>
-            <circle cx="10" cy="5" r="1.2" fill="none" stroke={color} strokeWidth="2"/>
-            <circle cx="12" cy="4" r="1.5" fill="none" stroke={color} strokeWidth="2"/>
-            <circle cx="14" cy="5" r="1.2" fill="none" stroke={color} strokeWidth="2"/>
-            <circle cx="16" cy="7" r="1.5" fill="none" stroke={color} strokeWidth="2"/>
-            <circle cx="7" cy="10" r="1" fill="none" stroke={color} strokeWidth="1.5"/>
-            <circle cx="17" cy="10" r="1" fill="none" stroke={color} strokeWidth="1.5"/>
-            {/* Eyes */}
-            <circle cx="10" cy="12" r="0.7" fill={color}/>
-            <circle cx="14" cy="12" r="0.7" fill={color}/>
-          </svg>
-        );
-
-      case 'textured':
-        return (
-          <svg style={iconStyle} viewBox="0 0 24 24" fill="none">
-            {/* Face outline */}
-            <ellipse cx="12" cy="14" rx="5" ry="7" fill="none" stroke={color} strokeWidth="1.5"/>
-            {/* Textured hair - jagged, layered look */}
-            <path d="M7 6 L8 8 L7 10 L9 12 L7 14 L8 16 L7 18" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>
-            <path d="M9 5 L10 7 L9 9 L11 11 L9 13 L10 15 L9 17" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>
-            <path d="M12 4 L13 6 L12 8 L14 10 L12 12 L13 14 L12 16" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>
-            <path d="M15 5 L16 7 L15 9 L17 11 L15 13 L16 15 L15 17" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>
-            <path d="M17 6 L18 8 L17 10 L19 12 L17 14 L18 16 L17 18" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>
-            {/* Eyes */}
-            <circle cx="10" cy="12" r="0.7" fill={color}/>
-            <circle cx="14" cy="12" r="0.7" fill={color}/>
-          </svg>
-        );
-
+      case 'straight': {
+        const strand = <path d="M12 3 L12 18" stroke={color} strokeWidth="2" strokeLinecap="round"/>;
+        return common(strand);
+      }
+      case 'wavy': {
+        const strand = <path d="M12 3 C13 6, 11 9, 12 12 C13 15, 11 16.5, 12 18" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>;
+        return common(strand);
+      }
+      case 'curly': {
+        const strand = <path d="M12 4 c2 -2, 2 2, 0 0 c-2 -2, -2 2, 0 0 c2 -2, 2 2, 0 0 c-2 -2, -2 2, 0 0" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>;
+        return common(strand);
+      }
+      case 'textured': {
+        const strand = <path d="M12 3 L12 6 L11 8 L13 10 L12 12 L11 14 L12 18" stroke={color} strokeWidth="2" strokeLinecap="round" fill="none"/>;
+        return common(strand);
+      }
       default:
-        return (
-          <svg style={iconStyle} viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="8" fill={color} fillOpacity="0.1" stroke={color} strokeWidth="2"/>
-          </svg>
-        );
+        return common(<path d="M12 3 L12 18" stroke={color} strokeWidth="2" strokeLinecap="round"/>);
     }
   }
 

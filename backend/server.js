@@ -33,7 +33,15 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.get('/api/hairstyles', async (req, res) => {
   try {
     const { length, texture, face_shape, style_type, pose, search } = req.query;
-    const filters = { length, texture, face_shape, style_type, pose, search };
+    const splitOrPass = (val) => typeof val === 'string' && val.includes(',') ? val.split(',').map(v => v.trim()).filter(Boolean) : val;
+    const filters = {
+      length: splitOrPass(length),
+      texture: splitOrPass(texture),
+      face_shape: splitOrPass(face_shape),
+      style_type: splitOrPass(style_type),
+      pose: splitOrPass(pose),
+      search
+    };
     const hairstyles = await db.getAllHairstyles(filters);
     res.json(hairstyles);
   } catch (error) {

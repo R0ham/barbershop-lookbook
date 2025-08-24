@@ -232,28 +232,58 @@ class Database {
       // category filter removed from API surface
 
       if (filters.length) {
-        query += ' AND length = ?';
-        params.push(filters.length);
+        if (Array.isArray(filters.length) && filters.length.length > 0) {
+          const placeholders = filters.length.map(() => '?').join(',');
+          query += ` AND length IN (${placeholders})`;
+          params.push(...filters.length);
+        } else if (typeof filters.length === 'string') {
+          query += ' AND length = ?';
+          params.push(filters.length);
+        }
       }
 
       if (filters.texture) {
-        query += ' AND texture = ?';
-        params.push(filters.texture);
+        if (Array.isArray(filters.texture) && filters.texture.length > 0) {
+          const placeholders = filters.texture.map(() => '?').join(',');
+          query += ` AND texture IN (${placeholders})`;
+          params.push(...filters.texture);
+        } else if (typeof filters.texture === 'string') {
+          query += ' AND texture = ?';
+          params.push(filters.texture);
+        }
       }
 
       if (filters.face_shape) {
-        query += ' AND face_shapes LIKE ?';
-        params.push(`%"${filters.face_shape}"%`);
+        if (Array.isArray(filters.face_shape) && filters.face_shape.length > 0) {
+          const ors = filters.face_shape.map(() => 'face_shapes LIKE ?').join(' OR ');
+          query += ` AND (${ors})`;
+          filters.face_shape.forEach(v => params.push(`%"${v}"%`));
+        } else if (typeof filters.face_shape === 'string') {
+          query += ' AND face_shapes LIKE ?';
+          params.push(`%"${filters.face_shape}"%`);
+        }
       }
 
       if (filters.style_type) {
-        query += ' AND style_type = ?';
-        params.push(filters.style_type);
+        if (Array.isArray(filters.style_type) && filters.style_type.length > 0) {
+          const placeholders = filters.style_type.map(() => '?').join(',');
+          query += ` AND style_type IN (${placeholders})`;
+          params.push(...filters.style_type);
+        } else if (typeof filters.style_type === 'string') {
+          query += ' AND style_type = ?';
+          params.push(filters.style_type);
+        }
       }
 
       if (filters.pose) {
-        query += ' AND pose = ?';
-        params.push(filters.pose);
+        if (Array.isArray(filters.pose) && filters.pose.length > 0) {
+          const placeholders = filters.pose.map(() => '?').join(',');
+          query += ` AND pose IN (${placeholders})`;
+          params.push(...filters.pose);
+        } else if (typeof filters.pose === 'string') {
+          query += ' AND pose = ?';
+          params.push(filters.pose);
+        }
       }
 
       if (filters.search) {
