@@ -17,6 +17,13 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick }) => 
     setImageLoaded(true);
   };
 
+  // Derive a source hostname from the image URL for lightweight attribution
+  let sourceHost = '';
+  try {
+    const u = new URL(hairstyle.image_url);
+    sourceHost = (u.hostname || '').replace(/^www\./, '');
+  } catch {}
+
   // Don't render the card if image failed to load
   if (!imageLoaded) {
     return null;
@@ -60,6 +67,17 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick }) => 
           transition: 'opacity 0.3s ease' 
         }}></div>
       </div>
+      {/* Small caption under image for attribution (source only) */}
+      {sourceHost && (
+        <div style={{
+          padding: '0.5rem 1rem 0',
+          fontSize: '0.75rem',
+          color: '#6b7280',
+          textAlign: 'right'
+        }}>
+          <span>{sourceHost}</span>
+        </div>
+      )}
       
       <div style={{ padding: '1.5rem' }}>
         <h3 style={{ 
