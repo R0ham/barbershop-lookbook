@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Hairstyle } from '../types';
 
 interface HairstyleCardProps {
@@ -24,6 +24,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick }) => 
 
   return (
     <div
+      className="hs-card"
       style={{
         background: 'rgba(255, 255, 255, 0.8)',
         backdropFilter: 'blur(8px)',
@@ -31,31 +32,22 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick }) => 
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         overflow: 'hidden',
         cursor: 'pointer',
-        transition: 'all 0.3s ease',
         border: '1px solid rgba(255, 255, 255, 0.3)'
       }}
       onClick={onClick}
-      onMouseOver={(e) => {
-        e.currentTarget.style.transform = 'scale(1.05)';
-        e.currentTarget.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.4)';
-        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.9)';
-      }}
-      onMouseOut={(e) => {
-        e.currentTarget.style.transform = 'scale(1)';
-        e.currentTarget.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.25)';
-        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.8)';
-      }}
     >
       <div style={{ position: 'relative', overflow: 'hidden' }}>
         <img
+          className="hs-card-img"
           src={hairstyle.image_url}
           alt={hairstyle.name}
+          loading="lazy"
+          decoding="async"
           style={{
             width: '100%',
             height: '20rem',
             objectFit: 'cover',
-            objectPosition: 'center',
-            transition: 'transform 0.3s ease'
+            objectPosition: 'center'
           }}
           onError={handleImageError}
           onLoad={handleImageLoad}
@@ -130,4 +122,4 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick }) => 
   );
 };
 
-export default HairstyleCard;
+export default memo(HairstyleCard);

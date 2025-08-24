@@ -35,7 +35,11 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   );
 
   // Render SVG icons for different filter types (category removed)
-  const renderIcon = (type: 'face' | 'length' | 'texture', value: string, isActive: boolean) => {
+  const renderIcon = (
+    type: 'face' | 'length' | 'texture' | 'style' | 'pose',
+    value: string,
+    isActive: boolean
+  ) => {
     // Cooler blue for active, slightly cooler gray for inactive
     const iconColor = isActive ? '#2563eb' : '#64748b';
     
@@ -51,6 +55,10 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       return <HairStyleIcons type="texture" style={value} size={20} color={iconColor} />;
     }
     
+    // For style and pose, we keep pills consistent without inline icons
+    if (type === 'style') return null;
+    if (type === 'pose') return null;
+    
     return null;
   };
 
@@ -58,7 +66,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     items: string[], 
     activeValues: string[], 
     filterType: string, 
-    iconType: 'face' | 'length' | 'texture'
+    iconType: 'face' | 'length' | 'texture' | 'style' | 'pose'
   ) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
       <button
@@ -144,22 +152,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
             Style Type
           </label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-            {filters.style_types.map((styleType) => {
-              const isActive = activeFilters.style_type.includes(styleType);
-              const next = isActive
-                ? activeFilters.style_type.filter(v => v !== styleType)
-                : [...activeFilters.style_type, styleType];
-              return (
-                <StyleTypeIcon
-                  key={styleType}
-                  type={styleType as 'Masculine' | 'Feminine' | 'Unisex'}
-                  isActive={isActive}
-                  onClick={() => onFilterChange('style_type', next)}
-                />
-              );
-            })}
-          </div>
+          {renderIconButtons(filters.style_types, activeFilters.style_type, 'style_type', 'style')}
         </div>
 
         {/* Pose Filter */}
@@ -167,22 +160,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
             Pose
           </label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-            {filters.poses.map((pose) => {
-              const isActive = activeFilters.pose.includes(pose);
-              const next = isActive
-                ? activeFilters.pose.filter(v => v !== pose)
-                : [...activeFilters.pose, pose];
-              return (
-                <PoseIcon
-                  key={pose}
-                  pose={pose as 'Straight-on' | 'Side' | 'Angled'}
-                  isActive={isActive}
-                  onClick={() => onFilterChange('pose', next)}
-                />
-              );
-            })}
-          </div>
+          {renderIconButtons(filters.poses, activeFilters.pose, 'pose', 'pose')}
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Hairstyle, Filters } from '../types';
 import HairstyleCard from './HairstyleCard';
 import FilterPanel from './FilterPanel';
@@ -28,6 +28,8 @@ const HairstyleGallery: React.FC = () => {
   const [selectedHairstyle, setSelectedHairstyle] = useState<Hairstyle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 24;
 
   useEffect(() => {
     fetchFilters();
@@ -44,6 +46,22 @@ const HairstyleGallery: React.FC = () => {
     fetchHairstyles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lengthDep, textureDep, faceDep, styleDep, poseDep, activeFilters.search]);
+
+  // Reset page to 1 when filters/search change or data changes
+  useEffect(() => {
+    setPage(1);
+  }, [lengthDep, textureDep, faceDep, styleDep, poseDep, activeFilters.search]);
+
+  // Pagination derived values
+  const total = filteredHairstyles.length;
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total]);
+  const clampedPage = Math.min(Math.max(page, 1), totalPages);
+  useEffect(() => {
+    if (page !== clampedPage) setPage(clampedPage);
+  }, [clampedPage]);
+  const start = (clampedPage - 1) * pageSize;
+  const end = Math.min(start + pageSize, total);
+  const pageItems = useMemo(() => filteredHairstyles.slice(start, end), [filteredHairstyles, start, end]);
 
   const fetchFilters = async () => {
     try {
@@ -301,7 +319,34 @@ const HairstyleGallery: React.FC = () => {
             gap: '0.5rem',
             boxShadow: '0 6px 12px rgba(0,0,0,0.06)',
             border: '1px solid #e5e7eb',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            transition: 'all 150ms ease'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = '#2563eb';
+            e.currentTarget.style.color = '#ffffff';
+            e.currentTarget.style.border = '1px solid #2563eb';
+            e.currentTarget.style.boxShadow = '0 10px 16px rgba(37, 99, 235, 0.25)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(45deg, rgba(96, 165, 250, 0.15), rgba(30, 64, 175, 0.12))';
+            e.currentTarget.style.color = '#1f2937';
+            e.currentTarget.style.border = '1px solid #e5e7eb';
+            e.currentTarget.style.boxShadow = '0 6px 12px rgba(0,0,0,0.06)';
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.background = '#2563eb';
+            e.currentTarget.style.color = '#ffffff';
+            e.currentTarget.style.border = '1px solid #2563eb';
+            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.35)';
+            e.currentTarget.style.outline = 'none';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(45deg, rgba(96, 165, 250, 0.15), rgba(30, 64, 175, 0.12))';
+            e.currentTarget.style.color = '#1f2937';
+            e.currentTarget.style.border = '1px solid #e5e7eb';
+            e.currentTarget.style.boxShadow = '0 6px 12px rgba(0,0,0,0.06)';
+            e.currentTarget.style.outline = '';
           }}
         >
           {(() => {
@@ -316,7 +361,7 @@ const HairstyleGallery: React.FC = () => {
               <>
                 <span>{filteredHairstyles.length} classic cut{filteredHairstyles.length !== 1 ? 's' : ''}</span>
                 {hasActive && <span aria-hidden>•</span>}
-                {hasActive && <span style={{ color: '#2563eb', fontWeight: 600 }}>Clear all</span>}
+                {hasActive && <span style={{ color: 'inherit', fontWeight: 600 }}>Clear all</span>}
                 <span aria-hidden>✂️</span>
               </>
             );
@@ -324,7 +369,7 @@ const HairstyleGallery: React.FC = () => {
         </button>
       </div>
 
-      {/* Gallery Grid */}
+      {/* Gallery Grid with client-side pagination */}
       {filteredHairstyles.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem 0' }}>
           <div style={{ 
@@ -368,23 +413,62 @@ const HairstyleGallery: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-            gap: '2rem', 
-            maxWidth: '80rem',
-            width: '100%'
-          }}>
-            {filteredHairstyles.map((hairstyle) => (
-              <HairstyleCard
-                key={hairstyle.id}
-                hairstyle={hairstyle}
-                onClick={() => setSelectedHairstyle(hairstyle)}
-              />
-            ))}
+        <>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+              gap: '2rem', 
+              maxWidth: '80rem',
+              width: '100%'
+            }}>
+              {pageItems.map((hairstyle) => (
+                <HairstyleCard
+                  key={hairstyle.id}
+                  hairstyle={hairstyle}
+                  onClick={() => setSelectedHairstyle(hairstyle)}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+
+          {/* Pagination controls */}
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.5rem' }}>
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={clampedPage <= 1}
+              style={{
+                padding: '0.5rem 0.9rem',
+                borderRadius: '0.5rem',
+                background: clampedPage <= 1 ? '#e5e7eb' : '#2563eb',
+                color: clampedPage <= 1 ? '#6b7280' : '#ffffff',
+                border: 'none',
+                cursor: clampedPage <= 1 ? 'not-allowed' : 'pointer',
+                transition: 'background 150ms ease'
+              }}
+            >
+              Prev
+            </button>
+            <div style={{ color: '#4b5563', fontSize: '0.875rem' }}>
+              <strong>{start + 1}</strong>–<strong>{end}</strong> of <strong>{total}</strong>
+            </div>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={clampedPage >= totalPages}
+              style={{
+                padding: '0.5rem 0.9rem',
+                borderRadius: '0.5rem',
+                background: clampedPage >= totalPages ? '#e5e7eb' : '#2563eb',
+                color: clampedPage >= totalPages ? '#6b7280' : '#ffffff',
+                border: 'none',
+                cursor: clampedPage >= totalPages ? 'not-allowed' : 'pointer',
+                transition: 'background 150ms ease'
+              }}
+            >
+              Next
+            </button>
+          </div>
+        </>
       )}
 
       {/* Modal */}
