@@ -20,20 +20,10 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, maxWidth }) => {
   };
 
   return (
-    <div style={{ marginBottom: '1.5rem' }}>
+    <div className="mb-6">
       <form onSubmit={handleSubmit} style={{ maxWidth: maxWidth ?? '42rem', margin: '0 auto' }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            borderRadius: '9999px',
-            border: '2px solid #e5e7eb',
-            background: 'rgba(255, 255, 255, 0.9)',
-            padding: '0.5rem 0.5rem 0.5rem 0.75rem',
-          }}
-        >
-          <span aria-hidden style={{ display: 'inline-flex', color: '#64748b' }}>
+        <div className="flex items-center gap-2 rounded-full border-2 border-gray-200 bg-white/90 pl-3 pr-2 py-2">
+          <span aria-hidden className="inline-flex text-slate-500">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="7" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -46,31 +36,14 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, maxWidth }) => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             aria-label="Search hairstyles"
-            style={{
-              flex: 1,
-              padding: '0.6rem 0.5rem',
-              fontSize: '1rem',
-              border: 'none',
-              outline: 'none',
-              background: 'transparent',
-              color: '#111827'
-            }}
+            className="flex-1 py-2 px-2 text-base border-none outline-none bg-transparent text-gray-900 placeholder-slate-400"
           />
           {searchTerm && (
             <button
               type="button"
               onClick={handleClear}
               title="Clear"
-              style={{
-                padding: '0.35rem 0.75rem',
-                borderRadius: '9999px',
-                border: '2px solid #e5e7eb',
-                background: 'rgba(255, 255, 255, 0.9)',
-                color: '#374151',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                cursor: 'pointer'
-              }}
+              className="px-3 py-1.5 rounded-full border-2 border-gray-200 bg-white/90 text-gray-700 text-sm font-medium hover:border-blue-300 hover:bg-blue-50"
             >
               Clear
             </button>
@@ -78,15 +51,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, maxWidth }) => {
           <button
             type="submit"
             aria-label="Submit search"
-            style={{
-              padding: '0.5rem 0.9rem',
-              borderRadius: '9999px',
-              border: '2px solid #60a5fa',
-              background: 'rgba(59, 130, 246, 0.12)',
-              color: '#2563eb',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
+            className="px-3 py-2 rounded-full border-2 border-blue-400 bg-blue-500/12 text-blue-600 font-semibold hover:bg-blue-500/20"
           >
             Search
           </button>

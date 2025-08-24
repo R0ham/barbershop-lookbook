@@ -79,49 +79,15 @@ export const StyleTypeIcon: React.FC<StyleTypeIconProps> = ({ type, isActive, on
   return (
     <button
       onClick={onClick}
-      style={{
-        width: '4rem',
-        height: '4rem',
-        borderRadius: '0.75rem',
-        border: isActive ? '2px solid #60a5fa' : '2px solid transparent',
-        background: isActive 
-          ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(147, 197, 253, 0.18))'
-          : 'rgba(255, 255, 255, 0.7)',
-        backdropFilter: 'blur(8px)',
-        boxShadow: isActive 
-          ? '0 10px 25px -5px rgba(59, 130, 246, 0.28)'
-          : '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-        transition: 'all 0.3s ease',
-        cursor: 'pointer',
-        padding: '0.5rem',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '0.25rem'
-      }}
-      onMouseEnter={(e) => {
-        if (!isActive) {
-          e.currentTarget.style.transform = 'translateY(-2px)';
-          e.currentTarget.style.boxShadow = '0 8px 15px -3px rgba(0, 0, 0, 0.2)';
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!isActive) {
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-        }
-      }}
+      className={`w-16 h-16 rounded-xl border-2 p-2 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all duration-300 backdrop-blur-md hover:-translate-y-0.5 hover:shadow-lg 
+        ${isActive 
+          ? 'border-blue-400 bg-[linear-gradient(135deg,rgba(59,130,246,0.18),rgba(147,197,253,0.18))] shadow-[0_10px_25px_-5px_rgba(59,130,246,0.28)]' 
+          : 'border-transparent bg-white/70 shadow-md'}`}
     >
-      <div style={{ width: '2rem', height: '2rem' }}>
+      <div className="w-8 h-8">
         {getIcon()}
       </div>
-      <span style={{ 
-        fontSize: '0.625rem', 
-        fontWeight: '600', 
-        color: isActive ? '#2563eb' : '#6b7280',
-        textAlign: 'center'
-      }}>
+      <span className={`text-[0.625rem] font-semibold text-center ${isActive ? 'text-blue-600' : 'text-gray-500'}`}>
         {type}
       </span>
     </button>

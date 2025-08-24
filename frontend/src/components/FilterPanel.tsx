@@ -22,14 +22,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   onFilterChange,
   onClearFilters
 }) => {
-  const hasActiveFilters = (
-    activeFilters.length.length > 0 ||
-    activeFilters.texture.length > 0 ||
-    activeFilters.face_shape.length > 0 ||
-    activeFilters.style_type.length > 0 ||
-    activeFilters.pose.length > 0 ||
-    activeFilters.search !== ''
-  );
+  // Filters state is managed by parent; local summary not needed here.
 
   // Render minimal-stroke SVG icons for each filter type (not for 'All')
   const renderIcon = (
@@ -48,20 +41,14 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     filterType: string, 
     iconType: 'face' | 'length' | 'texture' | 'style' | 'pose'
   ) => (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+    <div className="flex flex-wrap gap-2">
       <button
         onClick={() => onFilterChange(filterType, [])}
-        style={{
-          padding: '0.5rem 1rem',
-          borderRadius: '9999px',
-          border: `2px solid ${activeValues.length === 0 ? '#60a5fa' : '#e5e7eb'}`,
-          background: activeValues.length === 0 ? 'rgba(59, 130, 246, 0.10)' : 'rgba(255, 255, 255, 0.9)',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease',
-          fontSize: '0.875rem',
-          fontWeight: '500',
-          color: activeValues.length === 0 ? '#2563eb' : '#374151'
-        }}
+        className={`px-4 py-2 rounded-full border-2 transition-colors text-sm font-medium ${
+          activeValues.length === 0
+            ? 'border-blue-400 bg-blue-500/10 text-blue-600'
+            : 'border-gray-200 bg-white/90 text-gray-700 hover:border-blue-300 hover:bg-blue-50'
+        }`}
       >
         All
       </button>
@@ -72,20 +59,11 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           <button
             key={item}
             onClick={() => onFilterChange(filterType, next)}
-            style={{
-              padding: '0.5rem 1rem',
-              borderRadius: '9999px',
-              border: `2px solid ${isActive ? '#60a5fa' : '#e5e7eb'}`,
-              background: isActive ? 'rgba(59, 130, 246, 0.12)' : 'rgba(255, 255, 255, 0.9)',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              fontSize: '0.875rem',
-              fontWeight: '500',
-              color: isActive ? '#2563eb' : '#374151',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
+            className={`px-4 py-2 rounded-full border-2 transition-colors text-sm font-medium inline-flex items-center gap-2 ${
+              isActive
+                ? 'border-blue-400 bg-blue-500/12 text-blue-600'
+                : 'border-gray-200 bg-white/90 text-gray-700 hover:border-blue-300 hover:bg-blue-50'
+            }`}
           >
             {renderIcon(iconType, item, isActive)}
             {item}
@@ -96,27 +74,27 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+    <div className="flex flex-col gap-6">
+      <div className="grid [grid-template-columns:repeat(auto-fit,minmax(250px,1fr))] gap-6">
         {/* Face Shape Filter */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-semibold text-gray-700">
             Face Shape
           </label>
           {renderIconButtons(filters.face_shapes, activeFilters.face_shape, 'face_shape', 'face')}
         </div>
 
         {/* Length Filter */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-semibold text-gray-700">
             Length
           </label>
           {renderIconButtons(filters.lengths, activeFilters.length, 'length', 'length')}
         </div>
 
         {/* Texture Filter (exclude 'Any' option as redundant with All) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-semibold text-gray-700">
             Texture
           </label>
           {renderIconButtons(
@@ -128,16 +106,16 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         </div>
 
         {/* Type Filter */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-semibold text-gray-700">
             Type
           </label>
           {renderIconButtons(filters.style_types, activeFilters.style_type, 'style_type', 'style')}
         </div>
 
         {/* Pose Filter */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-semibold text-gray-700">
             Pose
           </label>
           {renderIconButtons(filters.poses, activeFilters.pose, 'pose', 'pose')}

@@ -327,27 +327,11 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div className="flex flex-col gap-6">
       {/* Filters Card (search moved to header in App) */}
-      <div style={{
-        background: '#ffffff',
-        borderRadius: '1rem',
-        boxShadow: '0 10px 20px rgba(0,0,0,0.08)',
-        border: '1px solid #e5e7eb',
-        padding: '2rem',
-        marginBottom: '2rem',
-        position: 'relative',
-        overflow: 'hidden' // clip accent to follow rounded corners
-      }}>
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8 relative overflow-hidden">
         {/* Accent line - subtle blue */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '6px',
-          background: 'linear-gradient(90deg, #60a5fa, #e5e7eb, #1e40af, #60a5fa)'
-        }} />
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-400 via-gray-200 to-blue-900" />
         <FilterPanel
           filters={filters}
           activeFilters={activeFilters}
@@ -357,52 +341,12 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       </div>
 
       {/* Results Count / Clear All */}
-      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+      <div className="text-center mb-8">
         <button
           onMouseDown={(e) => { e.preventDefault(); }}
           onClick={(e) => { e.preventDefault(); clearFilters(); (e.currentTarget as HTMLButtonElement)?.blur?.(); }}
           title="Clear all filters"
-          style={{ 
-            fontSize: '1.0rem', 
-            fontWeight: 600, 
-            color: '#1f2937',
-            background: 'linear-gradient(45deg, rgba(96, 165, 250, 0.15), rgba(30, 64, 175, 0.12))',
-            borderRadius: '9999px',
-            padding: '0.6rem 1.25rem',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            boxShadow: '0 6px 12px rgba(0,0,0,0.06)',
-            border: '1px solid #e5e7eb',
-            cursor: 'pointer',
-            transition: 'all 150ms ease'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.background = '#2563eb';
-            e.currentTarget.style.color = '#ffffff';
-            e.currentTarget.style.border = '1px solid #2563eb';
-            e.currentTarget.style.boxShadow = '0 10px 16px rgba(37, 99, 235, 0.25)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(45deg, rgba(96, 165, 250, 0.15), rgba(30, 64, 175, 0.12))';
-            e.currentTarget.style.color = '#1f2937';
-            e.currentTarget.style.border = '1px solid #e5e7eb';
-            e.currentTarget.style.boxShadow = '0 6px 12px rgba(0,0,0,0.06)';
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.background = '#2563eb';
-            e.currentTarget.style.color = '#ffffff';
-            e.currentTarget.style.border = '1px solid #2563eb';
-            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.35)';
-            e.currentTarget.style.outline = 'none';
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(45deg, rgba(96, 165, 250, 0.15), rgba(30, 64, 175, 0.12))';
-            e.currentTarget.style.color = '#1f2937';
-            e.currentTarget.style.border = '1px solid #e5e7eb';
-            e.currentTarget.style.boxShadow = '0 6px 12px rgba(0,0,0,0.06)';
-            e.currentTarget.style.outline = '';
-          }}
+          className="text-gray-800 bg-gradient-to-tr from-blue-400/15 to-blue-900/12 rounded-full px-5 py-2.5 inline-flex items-center gap-2 shadow-md border border-gray-200 cursor-pointer transition-colors duration-150 hover:bg-blue-600 hover:text-white hover:border-blue-600 focus:bg-blue-600 focus:text-white focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
         >
           {(() => {
             const hasActive =
@@ -416,7 +360,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
               <>
                 <span>{filteredHairstyles.length} classic cut{filteredHairstyles.length !== 1 ? 's' : ''}</span>
                 {hasActive && <span aria-hidden>•</span>}
-                {hasActive && <span style={{ color: 'inherit', fontWeight: 600 }}>Clear all</span>}
+                {hasActive && <span className="font-semibold">Clear all</span>}
               </>
             );
           })()}
@@ -425,42 +369,13 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
 
       {/* Gallery Grid with client-side pagination */}
       {filteredHairstyles.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '4rem 0' }}>
-          <div style={{ 
-            background: 'rgba(255, 255, 255, 0.7)', 
-            backdropFilter: 'blur(8px)', 
-            borderRadius: '1rem', 
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', 
-            padding: '3rem', 
-            maxWidth: '28rem', 
-            margin: '0 auto' 
-          }}>
-            <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>🔍</div>
-            <div style={{ color: '#4b5563', fontSize: '1.125rem', marginBottom: '1.5rem' }}>No hairstyles match your criteria</div>
+        <div className="text-center py-16">
+          <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-2xl p-12 max-w-md mx-auto">
+            <div className="text-4xl mb-4">🔍</div>
+            <div className="text-gray-600 text-lg mb-6">No hairstyles match your criteria</div>
             <button
               onClick={clearFilters}
-              style={{ 
-                background: 'linear-gradient(to right, #ec4899, #9333ea)', 
-                color: 'white', 
-                padding: '0.75rem 2rem', 
-                borderRadius: '9999px', 
-                border: 'none', 
-                cursor: 'pointer',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                transition: 'all 0.3s ease',
-                fontSize: '1rem',
-                fontWeight: '500'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(to right, #db2777, #7c3aed)';
-                e.currentTarget.style.transform = 'scale(1.05)';
-                e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(to right, #ec4899, #9333ea)';
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
-              }}
+              className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-8 py-3 rounded-full shadow-lg transition-transform duration-300 text-base font-medium hover:from-pink-600 hover:to-purple-700 hover:scale-105"
             >
               Clear all filters
             </button>
@@ -468,14 +383,8 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
         </div>
       ) : (
         <>
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-              gap: '2rem', 
-              maxWidth: '80rem',
-              width: '100%'
-            }}>
+          <div className="flex justify-center">
+            <div className="grid [grid-template-columns:repeat(auto-fit,minmax(300px,1fr))] gap-8 max-w-7xl w-full">
               {pageItems.map((hairstyle) => (
                 <HairstyleCard
                   key={hairstyle.id}
@@ -489,37 +398,21 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
           </div>
 
           {/* Pagination controls */}
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '1.5rem' }}>
+          <div className="flex justify-center items-center gap-4 mt-6">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={clampedPage <= 1}
-              style={{
-                padding: '0.5rem 0.9rem',
-                borderRadius: '0.5rem',
-                background: clampedPage <= 1 ? '#e5e7eb' : '#2563eb',
-                color: clampedPage <= 1 ? '#6b7280' : '#ffffff',
-                border: 'none',
-                cursor: clampedPage <= 1 ? 'not-allowed' : 'pointer',
-                transition: 'background 150ms ease'
-              }}
+              className={`px-3 py-2 rounded-md transition-colors ${clampedPage <= 1 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
             >
               Prev
             </button>
-            <div style={{ color: '#4b5563', fontSize: '0.875rem' }}>
+            <div className="text-gray-600 text-sm">
               <strong>{start + 1}</strong>–<strong>{end}</strong> of <strong>{total}</strong>
             </div>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={clampedPage >= totalPages}
-              style={{
-                padding: '0.5rem 0.9rem',
-                borderRadius: '0.5rem',
-                background: clampedPage >= totalPages ? '#e5e7eb' : '#2563eb',
-                color: clampedPage >= totalPages ? '#6b7280' : '#ffffff',
-                border: 'none',
-                cursor: clampedPage >= totalPages ? 'not-allowed' : 'pointer',
-                transition: 'background 150ms ease'
-              }}
+              className={`px-3 py-2 rounded-md transition-colors ${clampedPage >= totalPages ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
             >
               Next
             </button>

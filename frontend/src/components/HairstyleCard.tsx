@@ -70,38 +70,23 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
     selected: boolean
   ) => {
     // colored schemes
-    const schemes: Record<string, { border: string; bg: string; text: string; icon: string }> = {
-      length:   { border: '#fbcfe8', bg: '#fdf2f8', text: '#9d174d', icon: '#be185d' },
-      texture:  { border: '#c7d2fe', bg: '#eef2ff', text: '#3730a3', icon: '#4f46e5' },
-      style:    { border: '#a5f3fc', bg: '#ecfeff', text: '#0e7490', icon: '#0891b2' },
-      style_type:{ border: '#a5f3fc', bg: '#ecfeff', text: '#0e7490', icon: '#0891b2' },
-      pose:     { border: '#fde68a', bg: '#fffbeb', text: '#92400e', icon: '#d97706' },
-      face:     { border: '#bbf7d0', bg: '#f0fdf4', text: '#166534', icon: '#16a34a' },
-      face_shape:{ border: '#bbf7d0', bg: '#f0fdf4', text: '#166534', icon: '#16a34a' },
+    const schemes: Record<string, { classes: string; icon: string }> = {
+      length:     { classes: 'border-pink-200 bg-pink-50 text-rose-700', icon: '#be185d' },
+      texture:    { classes: 'border-indigo-200 bg-indigo-50 text-indigo-700', icon: '#4f46e5' },
+      style:      { classes: 'border-cyan-200 bg-cyan-50 text-cyan-700', icon: '#0891b2' },
+      style_type: { classes: 'border-cyan-200 bg-cyan-50 text-cyan-700', icon: '#0891b2' },
+      pose:       { classes: 'border-amber-200 bg-amber-50 text-amber-800', icon: '#d97706' },
+      face:       { classes: 'border-green-200 bg-green-50 text-green-700', icon: '#16a34a' },
+      face_shape: { classes: 'border-green-200 bg-green-50 text-green-700', icon: '#16a34a' },
     };
-    const gray = { border: '#e5e7eb', bg: '#f9fafb', text: '#6b7280', icon: '#6b7280' };
-    const blue = { border: '#bfdbfe', bg: '#eff6ff', text: '#1d4ed8', icon: '#2563eb' };
+    const gray = { classes: 'border-gray-200 bg-gray-50 text-gray-500', icon: '#6b7280' };
+    const blue = { classes: 'border-blue-200 bg-blue-50 text-blue-700', icon: '#2563eb' };
     // Logic:
     // - If any filters are active: selected -> blue, not selected -> gray
     // - If no filters active: use category scheme
     const sc = anyFiltersActive ? (selected ? blue : gray) : (schemes[type] || gray);
-    return {
-      style: {
-        padding: '0.375rem 0.75rem',
-        borderRadius: '9999px',
-        border: `2px solid ${sc.border}`,
-        background: sc.bg,
-        color: sc.text,
-        fontSize: '0.8rem',
-        fontWeight: 500,
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        cursor: 'pointer' as const,
-        userSelect: 'none' as const
-      },
-      icon: sc.icon
-    };
+    const base = 'px-3 py-1.5 rounded-full border-2 inline-flex items-center gap-2 cursor-pointer select-none text-[0.8rem] font-medium';
+    return { className: `${base} ${sc.classes}`, icon: sc.icon };
   };
 
   // Don't render the card if image failed to load
@@ -112,81 +97,39 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
   return (
     <div
       id={cardId}
-      className="hs-card"
-      style={{
-        position: 'relative',
-        background: '#ffffff',
-        borderRadius: '0.75rem',
-        boxShadow:
-          '0 1px 0 rgba(0,0,0,0.03), 0 2px 4px rgba(0,0,0,0.04), 0 10px 20px rgba(0,0,0,0.06)',
-        overflow: 'hidden',
-        cursor: 'pointer',
-        border: '1px solid #e5e7eb'
-      }}
+      className="relative bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer border border-gray-200"
       onClick={onClick}
     >
-      <div style={{ position: 'relative', overflow: 'hidden' }}>
+      <div className="relative overflow-hidden">
         <img
-          className="hs-card-img"
+          className="hs-card-img w-full h-80 object-cover object-center"
           src={hairstyle.image_url}
           alt={hairstyle.name}
           loading="lazy"
           decoding="async"
-          style={{
-            width: '100%',
-            height: '20rem',
-            objectFit: 'cover',
-            objectPosition: 'center'
-          }}
           onError={handleImageError}
           onLoad={handleImageLoad}
         />
-        <div style={{ 
-          position: 'absolute', 
-          inset: '0', 
-          background: 'linear-gradient(to top, rgba(0, 0, 0, 0.2), transparent, transparent)', 
-          opacity: '0', 
-          transition: 'opacity 0.3s ease' 
-        }}></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300"></div>
       </div>
       {/* Small caption under image for attribution (source only) */}
       {sourceHost && (
-        <div style={{
-          padding: '0.5rem 1rem 0',
-          fontSize: '0.75rem',
-          color: '#6b7280',
-          textAlign: 'right'
-        }}>
+        <div className="px-4 pt-2 text-xs text-gray-500 text-right">
           <span>{sourceHost}</span>
         </div>
       )}
       
-      <div style={{ padding: '1.5rem' }}>
-        <h3 style={{
-          fontWeight: 'bold',
-          fontSize: '1.25rem',
-          color: '#111827',
-          marginBottom: '0.75rem',
-          transition: 'color 0.3s ease'
-        }}>
+      <div className="p-6">
+        <h3 className="font-bold text-xl text-gray-900 mb-3 transition-colors duration-300">
           {hairstyle.name}
         </h3>
         
-        <p style={{ 
-          color: '#4b5563', 
-          fontSize: '0.875rem', 
-          marginBottom: '1rem', 
-          lineHeight: '1.5',
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden'
-        }}>
+        <p className="text-gray-600 text-sm mb-4 leading-6 line-clamp-2">
           {hairstyle.description}
         </p>
 
         {/* Attribute pills with minimal icons (colorized) - now clickable */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+        <div className="flex flex-wrap gap-2 mb-3">
           {/* Length */}
           <span
             onMouseDown={(e) => { e.preventDefault(); }}
@@ -194,7 +137,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
             role="button"
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('length', hairstyle.length, cardId); animatePill(e.currentTarget as HTMLElement); } }}
-            style={pillStyles('length', isSelected('length', hairstyle.length)).style}
+            className={pillStyles('length', isSelected('length', hairstyle.length)).className}
           >
             {getMinimalIcon('length', hairstyle.length, 20, pillStyles('length', isSelected('length', hairstyle.length)).icon)}
             {hairstyle.length}
@@ -206,7 +149,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
             role="button"
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('texture', hairstyle.texture, cardId); animatePill(e.currentTarget as HTMLElement); } }}
-            style={pillStyles('texture', isSelected('texture', hairstyle.texture)).style}
+            className={pillStyles('texture', isSelected('texture', hairstyle.texture)).className}
           >
             {getMinimalIcon('texture', hairstyle.texture, 20, pillStyles('texture', isSelected('texture', hairstyle.texture)).icon)}
             {hairstyle.texture}
@@ -218,7 +161,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
             role="button"
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('style_type', hairstyle.style_type, cardId); animatePill(e.currentTarget as HTMLElement); } }}
-            style={pillStyles('style_type', isSelected('style_type', hairstyle.style_type)).style}
+            className={pillStyles('style_type', isSelected('style_type', hairstyle.style_type)).className}
           >
             {getMinimalIcon('style', hairstyle.style_type, 20, pillStyles('style_type', isSelected('style_type', hairstyle.style_type)).icon)}
             {hairstyle.style_type}
@@ -230,7 +173,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
             role="button"
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('pose', hairstyle.pose, cardId); animatePill(e.currentTarget as HTMLElement); } }}
-            style={pillStyles('pose', isSelected('pose', hairstyle.pose)).style}
+            className={pillStyles('pose', isSelected('pose', hairstyle.pose)).className}
           >
             {getMinimalIcon('pose', hairstyle.pose, 20, pillStyles('pose', isSelected('pose', hairstyle.pose)).icon)}
             {hairstyle.pose}
@@ -245,7 +188,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
               role="button"
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('face_shape', fs, cardId); animatePill(e.currentTarget as HTMLElement); } }}
-              style={pillStyles('face_shape', isSelected('face_shape', fs)).style}
+              className={pillStyles('face_shape', isSelected('face_shape', fs)).className}
             >
               {getMinimalIcon('face', fs, 20, pillStyles('face_shape', isSelected('face_shape', fs)).icon)}
               {fs}
@@ -258,17 +201,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
               role="button"
               tabIndex={0}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); setFacesExpanded(true); } }}
-              style={{
-                padding: '0.375rem 0.75rem',
-                borderRadius: '9999px',
-                border: '2px solid #e5e7eb',
-                background: 'rgba(255, 255, 255, 0.9)',
-                color: '#374151',
-                fontSize: '0.8rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                userSelect: 'none'
-              }}
+              className="px-3 py-1.5 rounded-full border-2 border-gray-200 bg-white/90 text-gray-700 text-[0.8rem] font-medium cursor-pointer select-none"
             >
               +{hairstyle.face_shapes.length - 2} more
             </span>
