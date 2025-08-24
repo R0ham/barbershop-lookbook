@@ -153,10 +153,26 @@ body {
 }
 
 /* Slight alternating tilt for a collage feel: rotate only the photo-frame (not the tile) */
+.collage-grid > .collage-card {
+  max-width: 560px; /* prevent over-expansion in single-column layouts */
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
 .collage-grid > .collage-card .photo-frame { transition: transform 200ms ease; }
 .collage-grid > .collage-card:nth-of-type(odd)  .photo-frame { transform: rotate(-0.6deg); }
 .collage-grid > .collage-card:nth-of-type(even) .photo-frame { transform: rotate(0.4deg); }
 .collage-grid > .collage-card:hover .photo-frame { transform: rotate(0deg) scale(1.01); }
+
+/* Subtle alternating tilt for the description sheet as well */
+.collage-grid > .collage-card .paper-sheet { transition: transform 200ms ease; }
+/* Pseudo-random small tilts independent from photo-frame */
+.collage-grid > .collage-card:nth-of-type(6n+1) .paper-sheet { transform: rotate(0.4deg); }
+.collage-grid > .collage-card:nth-of-type(6n+2) .paper-sheet { transform: rotate(-0.2deg); }
+.collage-grid > .collage-card:nth-of-type(6n+3) .paper-sheet { transform: rotate(0.6deg); }
+.collage-grid > .collage-card:nth-of-type(6n+4) .paper-sheet { transform: rotate(-0.5deg); }
+.collage-grid > .collage-card:nth-of-type(6n+5) .paper-sheet { transform: rotate(0.2deg); }
+.collage-grid > .collage-card:nth-of-type(6n)   .paper-sheet { transform: rotate(-0.4deg); }
 
 /* Do not paint white background on hover for collage cards */
 .collage-card.hs-card:hover,
@@ -182,5 +198,5 @@ body {
     0 8px 22px -10px rgba(0,0,0,0.10),  /* main spread */
     0 0 20px -8px rgba(0,0,0,0.10),     /* halo */
     0 1px 4px -2px rgba(0,0,0,0.10);     /* contact */
-  transform: translateY(-1px);
+  transform: rotate(0deg) translateY(-1px);
 }
