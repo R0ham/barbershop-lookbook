@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Hairstyle, Filters } from '../types';
 import HairstyleCard from './HairstyleCard';
 import FilterPanel from './FilterPanel';
@@ -29,6 +29,8 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const pageSize = 24;
+  const lastScrollYRef = useRef<number | null>(null);
+  const lastAnchorIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     fetchFilters();
@@ -122,6 +124,8 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   };
 
   const handleFilterChange = (filterType: string, value: string | string[]) => {
+    // Preserve current scroll position when changing filters from the menu
+    try { lastScrollYRef.current = window.scrollY; } catch {}
     setActiveFilters(prev => {
       const prevVal = (prev as any)[filterType];
       if (Array.isArray(value) && Array.isArray(prevVal)) {
@@ -245,6 +249,8 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   };
 
   const clearFilters = () => {
+    // Preserve scroll on clear-all from menu or button
+    try { lastScrollYRef.current = window.scrollY; } catch {}
     setActiveFilters({
       length: [],
       texture: [],
@@ -255,13 +261,56 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     });
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
+  // Handler for clicks coming from cards to apply a single filter value
+  const onApplyFilter = (
+    type: 'length' | 'texture' | 'style_type' | 'pose' | 'face_shape',
+    value: string,
+    anchorId?: string
+  ) => {
+    // Save current scroll position and clicked anchor id to restore after data reload
+    try { lastScrollYRef.current = window.scrollY; } catch {}
+    if (anchorId) lastAnchorIdRef.current = anchorId;
+    setActiveFilters(prev => {
+      const current = (prev as any)[type] as string[];
+      if (Array.isArray(current)) {
+        if (current.includes(value)) {
+          const nextArr = current.filter(v => v !== value);
+          return { ...prev, [type]: nextArr } as typeof prev;
+        }
+        return { ...prev, [type]: [...current, value] } as typeof prev;
+      }
+      // Fallback (schema uses arrays for these)
+      return { ...prev, [type]: [value] } as typeof prev;
+    });
+  };
+
+  // When a load finishes after user-applied filters, restore scroll
+  useEffect(() => {
+    if (!loading) {
+      const anchorId = lastAnchorIdRef.current;
+      lastAnchorIdRef.current = null;
+      if (anchorId) {
+        const el = document.getElementById(anchorId);
+        if (el) {
+          try {
+            requestAnimationFrame(() => el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' }));
+          } catch {
+            try { el.scrollIntoView(); } catch {}
+          }
+          return; // don't also restore scrollY if we focused a specific element
+        }
+      }
+      if (lastScrollYRef.current != null) {
+        const y = lastScrollYRef.current;
+        lastScrollYRef.current = null;
+        try {
+          requestAnimationFrame(() => window.scrollTo({ top: y, behavior: 'auto' }));
+        } catch {
+          try { window.scrollTo(0, y); } catch {}
+        }
+      }
+    }
+  }, [loading]);
 
   if (error) {
     return (
@@ -310,7 +359,8 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       {/* Results Count / Clear All */}
       <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
         <button
-          onClick={clearFilters}
+          onMouseDown={(e) => { e.preventDefault(); }}
+          onClick={(e) => { e.preventDefault(); clearFilters(); (e.currentTarget as HTMLButtonElement)?.blur?.(); }}
           title="Clear all filters"
           style={{ 
             fontSize: '1.0rem', 
@@ -431,6 +481,8 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
                   key={hairstyle.id}
                   hairstyle={hairstyle}
                   onClick={() => setSelectedHairstyle(hairstyle)}
+                  onApplyFilter={onApplyFilter}
+                  activeFilters={activeFilters}
                 />
               ))}
             </div>
