@@ -38,6 +38,8 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   const pageSize = 24;
   const lastScrollYRef = useRef<number | null>(null);
   const lastAnchorIdRef = useRef<string | null>(null);
+  // Disable scroll restoration to avoid menu/popover clipping during filter changes
+  const enableScrollRestore = false;
 
   useEffect(() => {
     fetchFilters();
@@ -320,8 +322,9 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     });
   };
 
-  // When a load finishes after user-applied filters, restore scroll
+  // When a load finishes after user-applied filters, optionally restore scroll (disabled)
   useEffect(() => {
+    if (!enableScrollRestore) return;
     if (!loading) {
       const anchorId = lastAnchorIdRef.current;
       lastAnchorIdRef.current = null;
@@ -346,7 +349,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
         }
       }
     }
-  }, [loading]);
+  }, [loading, enableScrollRestore]);
 
   if (error) {
     return (
@@ -365,7 +368,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   return (
     <div className="flex flex-col gap-6">
       {/* Filters Card (search moved to header in App) */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8 relative overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 mb-8 relative">
         {/* Accent line - subtle blue */}
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-400 via-gray-200 to-blue-900" />
         <FilterPanel

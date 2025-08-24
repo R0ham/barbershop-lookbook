@@ -20,7 +20,7 @@ const capJoin = { strokeLinecap: 'round' as const, strokeLinejoin: 'round' as co
 export const MinimalEthnicityIcon: React.FC<{ ethnicity: string } & IconProps> = ({ ethnicity, size, color }) => {
   const e = (ethnicity || '').toLowerCase();
   const baseColor = color ?? '#2563eb';
-  const outline = { stroke: baseColor, strokeWidth: 1.6, fill: 'none', ...capJoin } as const;
+  const base = baseStroke(color);
   const softFill = { fill: baseColor, opacity: 0.15 } as const;
   const solidFill = { fill: baseColor, opacity: 0.9 } as const;
 
@@ -34,19 +34,17 @@ export const MinimalEthnicityIcon: React.FC<{ ethnicity: string } & IconProps> =
             d="M4 16
                C3.4 11.5, 5.2 6.2, 12 6.2
                C18.8 6.2, 20.6 11.5, 20 16 Z"
-            stroke={baseColor}
-            strokeWidth={1.8}
-            fill="none"
+            {...base}
             {...capJoin}
           />
           {/* Bottom teeth (5) */}
-          <path d="M7.3 13 v2" stroke={baseColor} strokeWidth={1.8} strokeLinecap="round" />
-          <path d="M10.3 12 v4" stroke={baseColor} strokeWidth={1.8} strokeLinecap="round" />
-          {/* <path d="M11.8 12 v4" stroke={baseColor} strokeWidth={1.8} strokeLinecap="round" /> */}
-          <path d="M13.3 12 v4" stroke={baseColor} strokeWidth={1.8} strokeLinecap="round" />
-          <path d="M16.3 13 v2" stroke={baseColor} strokeWidth={1.8} strokeLinecap="round" />
+          <path d="M7.3 13 v2" {...base} strokeLinecap="round" />
+          <path d="M10.3 12 v4" {...base} strokeLinecap="round" />
+          {/* <path d="M11.8 12 v4" {...base} strokeLinecap="round" /> */}
+          <path d="M13.3 12 v4" {...base} strokeLinecap="round" />
+          <path d="M16.3 13 v2" {...base} strokeLinecap="round" />
           {/* Cross bar over teeth connecting sides */}
-          <path d="M4 16 H19.8" stroke={baseColor} strokeWidth={1.8} strokeLinecap="round" />
+          <path d="M4 16 H19.8" {...base} strokeLinecap="round" />
           </g>
         </>
       )}
@@ -56,11 +54,11 @@ export const MinimalEthnicityIcon: React.FC<{ ethnicity: string } & IconProps> =
         <>
           <g transform="translate(12,12) scale(1.5) translate(-12,-12)">
             {/* Diagonal stick */}
-            <path d="M6 17 L12.8 13.06" stroke={baseColor} strokeWidth={1.8} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M6 17 L12.8 13.06" {...base} strokeLinecap="round" strokeLinejoin="round" />
             {/* Cube (square) attached to stick top */}
-            <rect x={13.2} y={7.7} width={5.0} height={5.0} fill="none" stroke={baseColor} strokeWidth={1.8} />
+            <rect x={13.2} y={7.7} width={5.0} height={5.0} {...base} />
             {/* Short connector to touch the cube */}
-            {/* <path d="M11.2 13.8 L13.2 12.2" stroke={baseColor} strokeWidth={1.8} strokeLinecap="round" /> */}
+            {/* <path d="M11.2 13.8 L13.2 12.2" {...base} strokeLinecap="round" /> */}
           </g>
         </>
       )}
@@ -70,9 +68,9 @@ export const MinimalEthnicityIcon: React.FC<{ ethnicity: string } & IconProps> =
         <>
           <g transform="translate(12,12.5) scale(1.125) translate(-12,-12.5)">
             {/* Bead outer silhouette (slightly squashed circle) */}
-            <ellipse cx={12} cy={12.5} rx={7.6} ry={6.4} fill="none" stroke={baseColor} strokeWidth={1.8} {...capJoin} />
+            <ellipse cx={12} cy={12.5} rx={7.6} ry={6.4} {...base} {...capJoin} />
             {/* Inner hole (angled ellipse to suggest bore) */}
-            <ellipse cx={11.0} cy={12.2} rx={3.45} ry={2.25} fill="none" stroke={baseColor} strokeWidth={1.8} transform="rotate(-8 13.0 13.1)" />
+            <ellipse cx={11.0} cy={12.2} rx={3.45} ry={2.25} {...base} transform="rotate(-8 13.0 13.1)" />
           </g>
         </>
       )}

@@ -72,6 +72,8 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
     return Array.isArray(list) ? list.includes(value) : false;
   };
 
+  const isAny = (v?: string) => typeof v === 'string' && v.trim().toLowerCase() === 'any';
+
   const pillStyles = (
     type: 'length' | 'texture' | 'style_type' | 'pose' | 'face_shape' | 'ethnicity',
     selected: boolean
@@ -85,7 +87,8 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
       pose:       { classes: 'border-amber-200 bg-amber-50 text-amber-800', icon: '#d97706' },
       face:       { classes: 'border-green-200 bg-green-50 text-green-700', icon: '#16a34a' },
       face_shape: { classes: 'border-green-200 bg-green-50 text-green-700', icon: '#16a34a' },
-      ethnicity:  { classes: 'border-blue-200 bg-blue-50 text-blue-700', icon: '#2563eb' },
+      // Use purple for ethnicity so it doesn't look like the app's blue accent when inactive
+      ethnicity:  { classes: 'border-purple-200 bg-purple-50 text-purple-700', icon: '#7c3aed' },
     };
     const gray = { classes: 'border-gray-200 bg-gray-50 text-gray-500', icon: '#6b7280' };
     const blue = { classes: 'border-blue-200 bg-blue-50 text-blue-700', icon: '#2563eb' };
@@ -99,8 +102,8 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
 
   // Build overflow items: face shapes + ethnicity as a last item if present
   const extraItemsAll = React.useMemo(() => {
-    const arr: string[] = [...(hairstyle.face_shapes || [])];
-    if (hairstyle.ethnicity) arr.push(`__ETH__:${hairstyle.ethnicity}`);
+    const arr: string[] = [...(hairstyle.face_shapes || [])].filter(v => !isAny(v));
+    if (hairstyle.ethnicity && !isAny(hairstyle.ethnicity)) arr.push(`__ETH__:${hairstyle.ethnicity}`);
     return arr;
   }, [hairstyle.face_shapes, hairstyle.ethnicity]);
 
@@ -112,7 +115,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
   return (
     <div
       id={cardId}
-      className="relative bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer border border-gray-200"
+      className="relative bg-white rounded-xl shadow-sm cursor-pointer border border-gray-200"
       onClick={onClick}
     >
       {/* Admin toolbar */}
@@ -192,6 +195,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
         {/* Attribute pills with minimal icons (colorized) - now clickable */}
         <div className="flex flex-wrap gap-2 mb-3">
           {/* Length */}
+          {!isAny(hairstyle.length) && (
           <span
             onMouseDown={(e) => { e.preventDefault(); }}
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('length', hairstyle.length, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
@@ -203,7 +207,9 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
             {getMinimalIcon('length', hairstyle.length, 20, pillStyles('length', isSelected('length', hairstyle.length)).icon)}
             {hairstyle.length}
           </span>
+          )}
           {/* Texture */}
+          {!isAny(hairstyle.texture) && (
           <span
             onMouseDown={(e) => { e.preventDefault(); }}
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('texture', hairstyle.texture, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
@@ -215,7 +221,9 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
             {getMinimalIcon('texture', hairstyle.texture, 20, pillStyles('texture', isSelected('texture', hairstyle.texture)).icon)}
             {hairstyle.texture}
           </span>
+          )}
           {/* Type */}
+          {!isAny(hairstyle.style_type) && (
           <span
             onMouseDown={(e) => { e.preventDefault(); }}
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('style_type', hairstyle.style_type, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
@@ -227,7 +235,9 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
             {getMinimalIcon('style', hairstyle.style_type, 20, pillStyles('style_type', isSelected('style_type', hairstyle.style_type)).icon)}
             {hairstyle.style_type}
           </span>
+          )}
           {/* Pose */}
+          {!isAny(hairstyle.pose) && (
           <span
             onMouseDown={(e) => { e.preventDefault(); }}
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('pose', hairstyle.pose, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
@@ -239,6 +249,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
             {getMinimalIcon('pose', hairstyle.pose, 20, pillStyles('pose', isSelected('pose', hairstyle.pose)).icon)}
             {hairstyle.pose}
           </span>
+          )}
           {/* Face shapes + Ethnicity overflow: show up to 2, fold rest into +N more */}
           {(facesExpanded ? extraItemsAll : extraItemsAll.slice(0, 2)).map((item) => {
             const isEth = item.startsWith('__ETH__:');
