@@ -154,33 +154,38 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
       <div className="flex flex-col gap-2 md:gap-3 p-0 bg-transparent">
         {/* Image */}
         <div className="photo-frame overflow-hidden">
-          <img
-            className="hs-card-img w-full h-80 object-cover object-center"
-            src={hairstyle.image_url}
-            alt={hairstyle.name}
-            loading="lazy"
-            decoding="async"
-            onError={handleImageError}
-            onLoad={handleImageLoad}
-          />
-          {sourceHost && (
-            <div className="pt-2 text-[11px] text-gray-500 text-right">
+          <div className="photo-image-wrap">
+            <img
+              className="hs-card-img w-full object-cover object-center"
+              src={hairstyle.image_url}
+              alt={hairstyle.name}
+              loading="lazy"
+              decoding="async"
+              onError={handleImageError}
+              onLoad={handleImageLoad}
+            />
+            {sourceHost && (
               <a
                 href={hairstyle.image_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => { e.stopPropagation(); }}
-                className="hover:underline hover:text-gray-700"
+                className="img-attrib"
                 title={`Open source: ${sourceHost}`}
               >
                 {sourceHost}
               </a>
+            )}
+          </div>
+          {/* Polaroid-style handwritten caption (only if a title exists) */}
+          {((hairstyle.name || '').trim().length > 0) && (
+            <div className="polaroid-caption text-center select-none">
+              {hairstyle.name}
             </div>
           )}
         </div>
         {/* Description */}
         <div className="paper-sheet p-4 md:p-5">
-          <h3 className="font-bold text-xl text-gray-900 mb-3 transition-colors duration-300">{hairstyle.name}</h3>
           <p className="text-gray-600 text-sm mb-4 leading-6 line-clamp-2">{hairstyle.description}</p>
           <div className="flex flex-wrap gap-2 mb-3">
             {/* Length */}

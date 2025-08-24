@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -100,12 +101,71 @@ body {
   border-radius: 0.75rem;
   /* Softer, more ambient base shadow */
   box-shadow: 0 6px 16px -10px rgba(0,0,0,0.18), 0 2px 6px -4px rgba(0,0,0,0.10);
-  padding: 0.5rem; /* 8px */
+  /* Polaroid-like matte with even more exaggerated bottom border */
+  padding: 1.5rem 0.75rem 2.5rem; /* even more top padding; bottom ~40px */
   transition: transform 200ms ease, box-shadow 200ms ease;
+  display: flex;
+  flex-direction: column;
 }
+.photo-image-wrap { position: relative; max-width: 84%; margin: 0 auto; }
 .photo-frame > img {
   border-radius: 0.5rem;
+  width: 100%;
+  height: auto !important; /* override any fixed height utilities */
+  aspect-ratio: 3 / 2; /* more landscape to reduce height even further */
+  object-fit: cover;
+  display: block;
 }
+
+/* Image source attribution: bottom-right overlay, show on hover */
+.img-attrib {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  padding: 2px 6px;
+  font-size: 10px;
+  line-height: 1;
+  color: #374151; /* gray-700 */
+  background: rgba(255,255,255,0.85);
+  border: 1px solid rgba(17,24,39,0.12); /* slate-900 @12% */
+  border-radius: 6px;
+  text-decoration: none;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 150ms ease, transform 150ms ease, color 150ms ease;
+}
+.photo-image-wrap:hover .img-attrib,
+.collage-card.hs-card:hover .img-attrib,
+.collage-card.hs-card:focus-within .img-attrib {
+  opacity: 1;
+  transform: translateY(0);
+}
+.img-attrib:hover { color: #111827; text-decoration: underline; }
+
+/* Handwritten-style caption for Polaroid */
+.polaroid-caption {
+  margin-top: 1.25rem; /* more top spacing above title */
+  /* Bigger, responsive handwritten size */
+  font-size: clamp(1.05rem, 1vw + 0.85rem, 1.35rem);
+  line-height: 1.2;
+  color: #1f2937; /* gray-800: off-black */
+  /* Handwritten font stack: will use fallbacks if web fonts not present */
+  font-family: 'Permanent Marker', 'Patrick Hand', 'Caveat', 'Shadows Into Light',
+               'Comic Sans MS', 'Bradley Hand', cursive;
+  font-weight: 400; /* thinner, more marker-like */
+  letter-spacing: 0.3px;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  text-shadow: 0.2px 0.2px 0 rgba(0,0,0,0.04); /* subtle ink bleed */
+  /* Handwritten vibe */
+  transform: rotate(-0.4deg);
+  pointer-events: none; /* don't block hover on image */
+}
+
+/* Slight variation per card for organic feel */
+.collage-card:nth-child(2n) .polaroid-caption { transform: rotate(0.5deg); }
+.collage-card:nth-child(3n) .polaroid-caption { transform: rotate(-0.8deg); }
+.collage-card:nth-child(5n) .polaroid-caption { transform: rotate(0.3deg); }
 
 /* Inner paper sheets used inside a card */
 .paper-sheet {
