@@ -1,5 +1,6 @@
 import React, { useState, memo } from 'react';
 import { Hairstyle } from '../types';
+import { getMinimalIcon } from './MinimalIcons';
 
 interface HairstyleCardProps {
   hairstyle: Hairstyle;
@@ -102,38 +103,104 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick }) => 
         }}>
           {hairstyle.description}
         </p>
-        
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
-          <span style={{ 
-            background: 'linear-gradient(to right, #fce7f3, #f3e8ff)', 
-            color: '#be185d', 
-            fontSize: '0.75rem', 
-            fontWeight: '500', 
-            padding: '0.375rem 0.75rem', 
-            borderRadius: '9999px' 
+
+        {/* Attribute pills with minimal icons (colorized) */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+          {/* Length - pink accents */}
+          <span style={{
+            padding: '0.375rem 0.75rem',
+            borderRadius: '9999px',
+            border: '2px solid #fbcfe8',
+            background: '#fdf2f8',
+            color: '#9d174d',
+            fontSize: '0.8rem',
+            fontWeight: 500,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem'
           }}>
+            {getMinimalIcon('length', hairstyle.length, 20, '#be185d')}
             {hairstyle.length}
           </span>
-          <span style={{ 
-            background: 'linear-gradient(to right, #e0e7ff, #dbeafe)', 
-            color: '#3730a3', 
-            fontSize: '0.75rem', 
-            fontWeight: '500', 
-            padding: '0.375rem 0.75rem', 
-            borderRadius: '9999px' 
+          {/* Texture - indigo accents */}
+          <span style={{
+            padding: '0.375rem 0.75rem',
+            borderRadius: '9999px',
+            border: '2px solid #c7d2fe',
+            background: '#eef2ff',
+            color: '#3730a3',
+            fontSize: '0.8rem',
+            fontWeight: 500,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem'
           }}>
+            {getMinimalIcon('texture', hairstyle.texture, 20, '#4f46e5')}
             {hairstyle.texture}
           </span>
-        </div>
-        
-        <div style={{ 
-          fontSize: '0.75rem', 
-          color: '#6b7280', 
-          background: '#f9fafb', 
-          borderRadius: '0.5rem', 
-          padding: '0.5rem' 
-        }}>
-          <span style={{ fontWeight: '500' }}>Perfect for:</span> {hairstyle.face_shapes.join(', ')} faces
+          {/* Type - cyan accents */}
+          <span style={{
+            padding: '0.375rem 0.75rem',
+            borderRadius: '9999px',
+            border: '2px solid #a5f3fc',
+            background: '#ecfeff',
+            color: '#0e7490',
+            fontSize: '0.8rem',
+            fontWeight: 500,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            {getMinimalIcon('style', hairstyle.style_type, 20, '#0891b2')}
+            {hairstyle.style_type}
+          </span>
+          {/* Pose - amber accents */}
+          <span style={{
+            padding: '0.375rem 0.75rem',
+            borderRadius: '9999px',
+            border: '2px solid #fde68a',
+            background: '#fffbeb',
+            color: '#92400e',
+            fontSize: '0.8rem',
+            fontWeight: 500,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            {getMinimalIcon('pose', hairstyle.pose, 20, '#d97706')}
+            {hairstyle.pose}
+          </span>
+          {/* Face shapes - green accents - show up to 2 explicitly */}
+          {(hairstyle.face_shapes || []).slice(0, 2).map((fs) => (
+            <span key={fs} style={{
+              padding: '0.375rem 0.75rem',
+              borderRadius: '9999px',
+              border: '2px solid #bbf7d0',
+              background: '#f0fdf4',
+              color: '#166534',
+              fontSize: '0.8rem',
+              fontWeight: 500,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              {getMinimalIcon('face', fs, 20, '#16a34a')}
+              {fs}
+            </span>
+          ))}
+          {hairstyle.face_shapes && hairstyle.face_shapes.length > 2 && (
+            <span style={{
+              padding: '0.375rem 0.75rem',
+              borderRadius: '9999px',
+              border: '2px solid #e5e7eb',
+              background: 'rgba(255, 255, 255, 0.9)',
+              color: '#374151',
+              fontSize: '0.8rem',
+              fontWeight: 500
+            }}>
+              +{hairstyle.face_shapes.length - 2} more
+            </span>
+          )}
         </div>
       </div>
     </div>

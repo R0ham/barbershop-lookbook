@@ -28,9 +28,10 @@ export const MinimalLengthIcon: React.FC<{ styleName: string } & IconProps> = ({
       )}
       {s === 'long' && (
         <>
-          <path {...base} {...capJoin} d="M3.5 8.5 C8 4.5, 16 4.5, 20.5 8.5" />
-          <path {...base} {...capJoin} d="M4.5 11 C9 7.5, 15 7.5, 19.5 11" />
-          <path {...base} {...capJoin} d="M6 14 C9.5 11.5, 14.5 11.5, 18 14" />
+          {/* Even vertical spacing (y=8,12,16) and consistent width */}
+          <path {...base} {...capJoin} d="M4 8 C8 4.5, 16 4.5, 20 8" />
+          <path {...base} {...capJoin} d="M4 12 C8 8.5, 16 8.5, 20 12" />
+          <path {...base} {...capJoin} d="M4 16 C8 12.5, 16 12.5, 20 16" />
         </>
       )}
       {!['short','medium','long'].includes(s) && (<circle {...base} cx={12} cy={12} r={7.5} />)}
