@@ -7,7 +7,6 @@ import HairstyleModal from './HairstyleModal';
 const API_BASE_URL = 'http://localhost:5001/api';
 
 const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch }) => {
-  const [hairstyles, setHairstyles] = useState<Hairstyle[]>([]);
   const [filteredHairstyles, setFilteredHairstyles] = useState<Hairstyle[]>([]);
   const [filters, setFilters] = useState<Filters>({
     lengths: [],
@@ -44,6 +43,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   useEffect(() => {
     fetchFilters();
     fetchHairstyles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Refetch when filters or search change (stable primitive deps)
@@ -77,6 +77,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   const clampedPage = Math.min(Math.max(page, 1), totalPages);
   useEffect(() => {
     if (page !== clampedPage) setPage(clampedPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clampedPage]);
   const start = (clampedPage - 1) * pageSize;
   const end = Math.min(start + pageSize, total);
@@ -89,9 +90,11 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       const data = await response.json();
       // Ensure compatibility if backend still returns categories
       const { lengths, textures, face_shapes, style_types, poses, ethnicities } = data;
+      // Normalize pose label: use 'Facing' instead of 'Straight-on' for UI/state
+      const posesNorm = (poses || []).map((p: string) => p === 'Straight-on' ? 'Facing' : p);
       const defaultEth = ['Caucasian', 'Asian', 'Afro'];
       const eth = Array.isArray(ethnicities) && ethnicities.length > 0 ? ethnicities : defaultEth;
-      setFilters({ lengths, textures, face_shapes, style_types, poses, ethnicities: eth });
+      setFilters({ lengths, textures, face_shapes, style_types, poses: posesNorm, ethnicities: eth });
     } catch (err) {
       console.error('Error fetching filters:', err);
     }
@@ -106,7 +109,6 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       });
       if (!res.ok) throw new Error('Failed to update ethnicity');
       // Update local lists
-      setHairstyles(prev => prev.map(h => h.id === id ? { ...h, ethnicity } : h));
       setFilteredHairstyles(prev => prev.map(h => h.id === id ? { ...h, ethnicity } : h));
       if (selectedHairstyle && selectedHairstyle.id === id) setSelectedHairstyle({ ...selectedHairstyle, ethnicity });
     } catch (e) {
@@ -122,9 +124,14 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
 
       Object.entries(activeFilters).forEach(([key, value]) => {
         if (Array.isArray(value)) {
-          if (value.length > 0) queryParams.append(key, value.join(','));
+          if (value.length > 0) {
+            // Translate canonical 'Facing' back to backend's 'Straight-on'
+            const mapped = key === 'pose' ? value.map(v => v === 'Facing' ? 'Straight-on' : v) : value;
+            queryParams.append(key, mapped.join(','));
+          }
         } else if (value) {
-          queryParams.append(key, value);
+          const mapped = (key === 'pose' && value === 'Facing') ? 'Straight-on' : value;
+          queryParams.append(key, mapped as string);
         }
       });
 
@@ -132,8 +139,11 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       if (!response.ok) throw new Error('Failed to fetch hairstyles');
       
       const data = await response.json();
-      setHairstyles(data);
-      setFilteredHairstyles(data);
+      // Normalize any legacy pose values from backend to canonical 'Facing'
+      const normalized = Array.isArray(data)
+        ? data.map((h: any) => ({ ...h, pose: (h?.pose === 'Straight-on') ? 'Facing' : h?.pose }))
+        : data;
+      setFilteredHairstyles(normalized);
       setError(null);
     } catch (err) {
       setError('Failed to load hairstyles. Please try again.');
@@ -210,7 +220,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
         { test: s => /\bshoulder\s*length\b/.test(s), apply: () => { if (lengths.includes('Medium')) matched.length.push('Medium'); }, consume: ['shoulder','length'] },
         { test: s => /\blong\s*hair\b/.test(s), apply: () => { if (lengths.includes('Long')) matched.length.push('Long'); }, consume: ['long','hair'] },
         { test: s => /\bside\s*(profile|view)\b/.test(s), apply: () => { if (poses.includes('Side')) matched.pose.push('Side'); }, consume: ['side','profile','view'] },
-        { test: s => /\b(straight[-\s]*on|front\s*facing)\b/.test(s), apply: () => { if (poses.includes('Straight-on')) matched.pose.push('Straight-on'); }, consume: ['straight','on','front','facing'] },
+        { test: s => /\b(straight[-\s]*on|front\s*facing)\b/.test(s), apply: () => { if (poses.includes('Facing')) matched.pose.push('Facing'); }, consume: ['straight','on','front','facing'] },
         { test: s => /\b(angled\s*view|three\s*quarter|3\/4)\b/.test(s), apply: () => { if (poses.includes('Angled')) matched.pose.push('Angled'); }, consume: ['angled','view','three','quarter'] },
       ];
 

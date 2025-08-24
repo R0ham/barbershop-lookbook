@@ -1,15 +1,16 @@
 import React from 'react';
 
 interface PoseIconProps {
-  pose: 'Straight-on' | 'Side' | 'Angled';
+  pose: 'Facing' | 'Side' | 'Angled' | 'Straight-on'; // accept legacy 'Straight-on'
   isActive: boolean;
   onClick: () => void;
 }
 
 export const PoseIcon: React.FC<PoseIconProps> = ({ pose, isActive, onClick }) => {
+  const canonical = pose === 'Straight-on' ? 'Facing' : pose;
   const getIcon = () => {
-    switch (pose) {
-      case 'Straight-on':
+    switch (canonical) {
+      case 'Facing':
         return (
           <svg viewBox="0 0 100 100" className="w-full h-full">
             {/* Face outline - front view */}
@@ -81,7 +82,7 @@ export const PoseIcon: React.FC<PoseIconProps> = ({ pose, isActive, onClick }) =
         {getIcon()}
       </div>
       <span className={`text-[0.625rem] font-semibold text-center ${isActive ? 'text-blue-600' : 'text-gray-500'}`}>
-        {pose}
+        {canonical}
       </span>
     </button>
   );

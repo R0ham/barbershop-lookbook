@@ -22,7 +22,6 @@ export const MinimalEthnicityIcon: React.FC<{ ethnicity: string } & IconProps> =
   const baseColor = color ?? '#2563eb';
   const base = baseStroke(color);
   const softFill = { fill: baseColor, opacity: 0.15 } as const;
-  const solidFill = { fill: baseColor, opacity: 0.9 } as const;
 
   return (
     <svg style={svgStyle(size)} viewBox="0 0 24 24">
@@ -201,7 +200,7 @@ export const MinimalPoseIcon: React.FC<{ pose: string } & IconProps> = ({ pose, 
   const base = baseStroke(color);
   return (
     <svg style={svgStyle(size)} viewBox="0 0 24 24">
-      {p === 'straight-on' && (
+      {(p === 'straight-on' || p === 'facing') && (
         <>
           <circle {...base} cx={12} cy={12} r={7} />
           <circle cx={10} cy={11} r={0.9} fill={color ?? '#2563eb'} />
@@ -222,7 +221,7 @@ export const MinimalPoseIcon: React.FC<{ pose: string } & IconProps> = ({ pose, 
           <circle cx={14} cy={12} r={0.9} fill={color ?? '#2563eb'} />
         </>
       )}
-      {!['straight-on','side','angled'].includes(p) && (<circle {...base} cx={12} cy={12} r={7} />)}
+      {!['straight-on','facing','side','angled'].includes(p) && (<circle {...base} cx={12} cy={12} r={7} />)}
     </svg>
   );
 };
