@@ -11,6 +11,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+:root {
+  /* Global eye-line focal position for grid images */
+  --hs-focal-y: 42%;
+}
+
 /* Performance-oriented card interactions (CSS-only, GPU-friendly) */
 .hs-card {
   transition: transform 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
@@ -29,6 +34,8 @@ body {
 .hs-card-img {
   transition: transform 250ms ease;
   will-change: transform;
+  /* Align eye line across images: default focal point ~38% from top */
+  object-position: 50% var(--hs-focal-y, 38%);
 }
 
 .hs-card:hover .hs-card-img,

@@ -1,9 +1,6 @@
 import React from 'react';
 import { Filters } from '../types';
-import FaceShapeIcons from './FaceShapeIcons';
-import HairStyleIcons from './HairStyleIcons';
-import { StyleTypeIcon } from './StyleTypeIcons';
-import { PoseIcon } from './PoseIcons';
+import { getMinimalIcon } from './MinimalIcons';
 
 interface FilterPanelProps {
   filters: Filters;
@@ -34,32 +31,15 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     activeFilters.search !== ''
   );
 
-  // Render SVG icons for different filter types (category removed)
+  // Render minimal-stroke SVG icons for each filter type (not for 'All')
   const renderIcon = (
     type: 'face' | 'length' | 'texture' | 'style' | 'pose',
     value: string,
     isActive: boolean
   ) => {
-    // Cooler blue for active, slightly cooler gray for inactive
+    // Active: blue, Inactive: cool gray
     const iconColor = isActive ? '#2563eb' : '#64748b';
-    
-    if (type === 'face') {
-      return <FaceShapeIcons shape={value} size={20} color={iconColor} />;
-    }
-    
-    if (type === 'length') {
-      return <HairStyleIcons type="length" style={value} size={20} color={iconColor} />;
-    }
-    
-    if (type === 'texture') {
-      return <HairStyleIcons type="texture" style={value} size={20} color={iconColor} />;
-    }
-    
-    // For style and pose, we keep pills consistent without inline icons
-    if (type === 'style') return null;
-    if (type === 'pose') return null;
-    
-    return null;
+    return getMinimalIcon(type, value, 20, iconColor);
   };
 
   const renderIconButtons = (
@@ -147,10 +127,10 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           )}
         </div>
 
-        {/* Style Type Filter */}
+        {/* Type Filter */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           <label style={{ fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>
-            Style Type
+            Type
           </label>
           {renderIconButtons(filters.style_types, activeFilters.style_type, 'style_type', 'style')}
         </div>
