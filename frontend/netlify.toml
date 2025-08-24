@@ -1,0 +1,28 @@
+# Netlify deploy config for CRA (with CRACO)
+[build]
+  command = "npm run build"
+  publish = "build"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Single Page App fallback so deep links work
+[[redirects]]
+  from = "/_/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Optional: if your backend API is hosted elsewhere, you can proxy via Netlify redirects
+# Replace YOUR_BACKEND_DOMAIN with your API host (https://api.example.com)
+# Or prefer setting REACT_APP_API_BASE_URL in the Netlify UI and let the app call it directly.
+#
+# [[redirects]]
+#   from = "/api/*"
+#   to = "https://YOUR_BACKEND_DOMAIN/api/:splat"
+#   status = 200
+#   force = true

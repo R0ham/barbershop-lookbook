@@ -1,3 +1,5 @@
+/* Ensure tiles don't clip rotated/shadowed inner elements */
+.collage-card { overflow: visible; }
 @import url('https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap');
 @tailwind base;
 @tailwind components;
@@ -141,7 +143,7 @@ body::after {
   transition: transform 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
   will-change: transform;
   content-visibility: auto;
-  contain-intrinsic-size: 320px 520px; /* reserve space to avoid layout shifts */
+  contain-intrinsic-size: 320px 660px; /* larger reserve to avoid clipping */
 }
 
 .hs-card:hover,
@@ -221,17 +223,17 @@ body::after {
   /* Softer, more ambient base shadow */
   box-shadow: 0 6px 16px -10px rgba(0,0,0,0.18), 0 2px 6px -4px rgba(0,0,0,0.10);
   /* Polaroid-like matte with even more exaggerated bottom border */
-  padding: 1.5rem 0.75rem 2.5rem; /* even more top padding; bottom ~40px */
+  padding: 1.5rem 0.75rem 3rem; /* extra bottom space for caption/shadows */
   transition: transform 200ms ease, box-shadow 200ms ease;
   display: flex;
   flex-direction: column;
+  overflow: visible; /* do not clip inner shadows/rotation */
 }
-.photo-image-wrap { position: relative; max-width: 84%; margin: 0 auto; }
-.photo-frame > img {
+.photo-image-wrap { position: relative; max-width: 90%; margin: 0 auto; overflow: visible; }
+.photo-image-wrap > img {
   border-radius: 0.5rem;
   width: 100%;
   height: auto !important; /* override any fixed height utilities */
-  aspect-ratio: 3 / 2; /* more landscape to reduce height even further */
   object-fit: cover;
   display: block;
 }

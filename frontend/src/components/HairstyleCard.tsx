@@ -153,7 +153,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
       )}
       <div className="flex flex-col gap-2 md:gap-3 p-0 bg-transparent">
         {/* Image */}
-        <div className="photo-frame overflow-hidden">
+        <div className="photo-frame">
           <div className="photo-image-wrap">
             <img
               className="hs-card-img w-full object-cover object-center"
