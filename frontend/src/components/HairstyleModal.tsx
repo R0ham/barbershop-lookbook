@@ -48,6 +48,11 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose }) =
                   <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
                     {hairstyle.texture}
                   </span>
+                  {hairstyle.ethnicity && (
+                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                      {hairstyle.ethnicity}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -103,6 +108,12 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose }) =
                     <span className="text-gray-600">Texture:</span>
                     <span className="font-medium">{hairstyle.texture}</span>
                   </div>
+                  {hairstyle.ethnicity && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Ethnicity:</span>
+                      <span className="font-medium">{hairstyle.ethnicity}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

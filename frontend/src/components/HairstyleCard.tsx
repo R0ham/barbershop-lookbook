@@ -6,7 +6,7 @@ interface HairstyleCardProps {
   hairstyle: Hairstyle;
   onClick: () => void;
   onApplyFilter?: (
-    type: 'length' | 'texture' | 'style_type' | 'pose' | 'face_shape',
+    type: 'length' | 'texture' | 'style_type' | 'pose' | 'face_shape' | 'ethnicity',
     value: string,
     anchorId?: string
   ) => void;
@@ -16,13 +16,19 @@ interface HairstyleCardProps {
     face_shape: string[];
     style_type: string[];
     pose: string[];
+    ethnicity: string[];
     search?: string;
   };
+  adminMode?: boolean;
+  ethnicityOptions?: string[];
+  onUpdateEthnicity?: (id: string, ethnicity: string) => void;
 }
 
-const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApplyFilter, activeFilters }) => {
+const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApplyFilter, activeFilters, adminMode, ethnicityOptions = [], onUpdateEthnicity }) => {
   const [imageLoaded, setImageLoaded] = useState(true);
   const [facesExpanded, setFacesExpanded] = useState(false);
+  const [pendingEth, setPendingEth] = useState<string>(hairstyle.ethnicity || '');
+  const [savedTick, setSavedTick] = useState(false);
   const cardId = React.useMemo(() => `hs-card-${hairstyle.id}`, [hairstyle.id]);
 
   const animatePill = (el?: Element | null) => {
@@ -56,17 +62,18 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
     (activeFilters.texture?.length ?? 0) > 0 ||
     (activeFilters.face_shape?.length ?? 0) > 0 ||
     (activeFilters.style_type?.length ?? 0) > 0 ||
-    (activeFilters.pose?.length ?? 0) > 0
+    (activeFilters.pose?.length ?? 0) > 0 ||
+    (activeFilters.ethnicity?.length ?? 0) > 0
   );
 
-  const isSelected = (type: 'length' | 'texture' | 'style_type' | 'pose' | 'face_shape', value: string) => {
+  const isSelected = (type: 'length' | 'texture' | 'style_type' | 'pose' | 'face_shape' | 'ethnicity', value: string) => {
     if (!activeFilters) return false;
     const list = (activeFilters as any)[type] as string[] | undefined;
     return Array.isArray(list) ? list.includes(value) : false;
   };
 
   const pillStyles = (
-    type: 'length' | 'texture' | 'style_type' | 'pose' | 'face_shape',
+    type: 'length' | 'texture' | 'style_type' | 'pose' | 'face_shape' | 'ethnicity',
     selected: boolean
   ) => {
     // colored schemes
@@ -78,6 +85,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
       pose:       { classes: 'border-amber-200 bg-amber-50 text-amber-800', icon: '#d97706' },
       face:       { classes: 'border-green-200 bg-green-50 text-green-700', icon: '#16a34a' },
       face_shape: { classes: 'border-green-200 bg-green-50 text-green-700', icon: '#16a34a' },
+      ethnicity:  { classes: 'border-blue-200 bg-blue-50 text-blue-700', icon: '#2563eb' },
     };
     const gray = { classes: 'border-gray-200 bg-gray-50 text-gray-500', icon: '#6b7280' };
     const blue = { classes: 'border-blue-200 bg-blue-50 text-blue-700', icon: '#2563eb' };
@@ -88,6 +96,13 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
     const base = 'px-3 py-1.5 rounded-full border-2 inline-flex items-center gap-2 cursor-pointer select-none text-[0.8rem] font-medium';
     return { className: `${base} ${sc.classes}`, icon: sc.icon };
   };
+
+  // Build overflow items: face shapes + ethnicity as a last item if present
+  const extraItemsAll = React.useMemo(() => {
+    const arr: string[] = [...(hairstyle.face_shapes || [])];
+    if (hairstyle.ethnicity) arr.push(`__ETH__:${hairstyle.ethnicity}`);
+    return arr;
+  }, [hairstyle.face_shapes, hairstyle.ethnicity]);
 
   // Don't render the card if image failed to load
   if (!imageLoaded) {
@@ -100,6 +115,43 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
       className="relative bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer border border-gray-200"
       onClick={onClick}
     >
+      {/* Admin toolbar */}
+      {adminMode && (
+        <div
+          className="absolute top-2 right-2 z-10 bg-white/90 backdrop-blur rounded-md border border-gray-200 shadow px-2 py-1 flex items-center gap-2"
+          onClick={(e) => { e.stopPropagation(); }}
+          onMouseDown={(e) => { e.preventDefault(); }}
+        >
+          <label className="text-xs text-gray-600">Ethnicity</label>
+          <select
+            className="text-xs border-gray-300 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            value={pendingEth}
+            onChange={(e) => { setPendingEth(e.target.value); setSavedTick(false); }}
+          >
+            <option value="">—</option>
+            {ethnicityOptions.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+          <button
+            className="text-xs px-2 py-0.5 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+            disabled={(pendingEth || '') === (hairstyle.ethnicity || '')}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (onUpdateEthnicity) {
+                onUpdateEthnicity(String(hairstyle.id), pendingEth);
+                setSavedTick(true);
+                setTimeout(() => setSavedTick(false), 1200);
+              }
+            }}
+            title="Save ethnicity"
+          >
+            Save
+          </button>
+          {savedTick && <span className="text-green-600 text-xs">✓</span>}
+        </div>
+      )}
       <div className="relative overflow-hidden">
         <img
           className="hs-card-img w-full h-80 object-cover object-center"
@@ -115,7 +167,16 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
       {/* Small caption under image for attribution (source only) */}
       {sourceHost && (
         <div className="px-4 pt-2 text-xs text-gray-500 text-right">
-          <span>{sourceHost}</span>
+          <a
+            href={hairstyle.image_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => { e.stopPropagation(); }}
+            className="hover:underline hover:text-gray-700"
+            title={`Open source: ${sourceHost}`}
+          >
+            {sourceHost}
+          </a>
         </div>
       )}
       
@@ -178,23 +239,39 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
             {getMinimalIcon('pose', hairstyle.pose, 20, pillStyles('pose', isSelected('pose', hairstyle.pose)).icon)}
             {hairstyle.pose}
           </span>
-          {/* Face shapes - green accents - show up to 2 explicitly */}
-          {(
-            facesExpanded ? (hairstyle.face_shapes || []) : (hairstyle.face_shapes || []).slice(0, 2)
-          ).map((fs) => (
-            <span key={fs}
-              onMouseDown={(e) => { e.preventDefault(); }}
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('face_shape', fs, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('face_shape', fs, cardId); animatePill(e.currentTarget as HTMLElement); } }}
-              className={pillStyles('face_shape', isSelected('face_shape', fs)).className}
-            >
-              {getMinimalIcon('face', fs, 20, pillStyles('face_shape', isSelected('face_shape', fs)).icon)}
-              {fs}
-            </span>
-          ))}
-          {(!facesExpanded && hairstyle.face_shapes && hairstyle.face_shapes.length > 2) && (
+          {/* Face shapes + Ethnicity overflow: show up to 2, fold rest into +N more */}
+          {(facesExpanded ? extraItemsAll : extraItemsAll.slice(0, 2)).map((item) => {
+            const isEth = item.startsWith('__ETH__:');
+            const val = isEth ? item.replace('__ETH__:', '') : item;
+            if (isEth) {
+              return (
+                <span key={`eth-${val}`}
+                  onMouseDown={(e) => { e.preventDefault(); }}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('ethnicity', val, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('ethnicity', val, cardId); animatePill(e.currentTarget as HTMLElement); } }}
+                  className={pillStyles('ethnicity', isSelected('ethnicity', val)).className}
+                >
+                  {val}
+                </span>
+              );
+            }
+            return (
+              <span key={val}
+                onMouseDown={(e) => { e.preventDefault(); }}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('face_shape', val, cardId); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('face_shape', val, cardId); animatePill(e.currentTarget as HTMLElement); } }}
+                className={pillStyles('face_shape', isSelected('face_shape', val)).className}
+              >
+                {getMinimalIcon('face', val, 20, pillStyles('face_shape', isSelected('face_shape', val)).icon)}
+                {val}
+              </span>
+            );
+          })}
+          {(!facesExpanded && extraItemsAll.length > 2) && (
             <span
               onMouseDown={(e) => { e.preventDefault(); }}
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setFacesExpanded(true); (e.currentTarget as HTMLElement)?.blur?.(); }}
@@ -203,7 +280,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); setFacesExpanded(true); } }}
               className="px-3 py-1.5 rounded-full border-2 border-gray-200 bg-white/90 text-gray-700 text-[0.8rem] font-medium cursor-pointer select-none"
             >
-              +{hairstyle.face_shapes.length - 2} more
+              +{extraItemsAll.length - 2} more
             </span>
           )}
         </div>

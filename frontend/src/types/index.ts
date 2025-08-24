@@ -6,6 +6,7 @@ export interface Hairstyle {
   face_shapes: string[];
   style_type: string;
   pose: string;
+  ethnicity?: string;
   image_url: string;
   image_data?: Buffer;
   description: string;
@@ -20,4 +21,5 @@ export interface Filters {
   face_shapes: string[];
   style_types: string[];
   poses: string[];
+  ethnicities?: string[];
 }

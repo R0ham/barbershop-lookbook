@@ -21,6 +21,7 @@ class Database {
           face_shapes TEXT NOT NULL,
           style_type TEXT DEFAULT 'Unisex',
           pose TEXT DEFAULT 'Straight-on',
+          ethnicity TEXT,
           image_url TEXT NOT NULL,
           image_data BLOB,
           description TEXT,
@@ -30,22 +31,64 @@ class Database {
         )
       `);
 
-      // Create indexes for better query performance
-      this.db.run(`CREATE INDEX IF NOT EXISTS idx_category ON hairstyles(category)`);
-      this.db.run(`CREATE INDEX IF NOT EXISTS idx_length ON hairstyles(length)`);
-      this.db.run(`CREATE INDEX IF NOT EXISTS idx_texture ON hairstyles(texture)`);
-      this.db.run(`CREATE INDEX IF NOT EXISTS idx_style_type ON hairstyles(style_type)`);
-      this.db.run(`CREATE INDEX IF NOT EXISTS idx_pose ON hairstyles(pose)`);
-
-      // Insert sample data if table is empty
-      this.db.get("SELECT COUNT(*) as count FROM hairstyles", (err, row) => {
+      // Migration: add ethnicity column if table existed without it, then create indexes, then seed/backfill
+      this.db.all(`PRAGMA table_info('hairstyles')`, (err, rows) => {
         if (err) {
-          console.error('Error checking hairstyles count:', err);
-          return;
-        }
-        
-        if (row.count === 0) {
-          this.insertSampleData();
+          console.error('Error reading table info:', err);
+        } else {
+          const hasEth = rows.some(r => r.name === 'ethnicity');
+          const ensureIndexes = () => {
+            // Create indexes for better query performance (run after ensuring columns)
+            this.db.run(`CREATE INDEX IF NOT EXISTS idx_category ON hairstyles(category)`);
+            this.db.run(`CREATE INDEX IF NOT EXISTS idx_length ON hairstyles(length)`);
+            this.db.run(`CREATE INDEX IF NOT EXISTS idx_texture ON hairstyles(texture)`);
+            this.db.run(`CREATE INDEX IF NOT EXISTS idx_style_type ON hairstyles(style_type)`);
+            this.db.run(`CREATE INDEX IF NOT EXISTS idx_pose ON hairstyles(pose)`);
+            this.db.run(`CREATE INDEX IF NOT EXISTS idx_ethnicity ON hairstyles(ethnicity)`);
+          };
+
+          const runPostMigration = () => {
+            // Insert sample data if table is empty and backfill ethnicity on existing rows
+            this.db.get("SELECT COUNT(*) as count FROM hairstyles", (err2, row) => {
+              if (err2) {
+                console.error('Error checking hairstyles count:', err2);
+                return;
+              }
+              if (row.count === 0) {
+                this.insertSampleData();
+              } else {
+                // Backfill ethnicity column if null using name heuristics from our original seed set
+                const updates = [
+                  { like: '%Classic Bob%', eth: 'Caucasian' },
+                  { like: '%Beach Waves%', eth: 'Caucasian' },
+                  { like: '%Long Layers%', eth: 'Asian' },
+                  { like: '%Pixie Cut%', eth: 'Caucasian' },
+                  { like: '%Curly Shag%', eth: 'Afro' },
+                  { like: '%Blunt Lob%', eth: 'Caucasian' },
+                  { like: '%Braided Crown%', eth: 'Afro' },
+                  { like: '%Asymmetrical Bob%', eth: 'Asian' },
+                  { like: '%Sleek Straight%', eth: 'Asian' },
+                  { like: '%Textured Crop%', eth: 'Caucasian' },
+                  { like: '%Voluminous Curls%', eth: 'Afro' },
+                  { like: '%Side Swept Bangs%', eth: 'Caucasian' }
+                ];
+                updates.forEach(u => {
+                  this.db.run('UPDATE hairstyles SET ethnicity = COALESCE(ethnicity, ?) WHERE ethnicity IS NULL AND name LIKE ?', [u.eth, u.like]);
+                });
+              }
+            });
+          };
+
+          if (!hasEth) {
+            this.db.run(`ALTER TABLE hairstyles ADD COLUMN ethnicity TEXT`, (e) => {
+              if (e) console.warn('ALTER TABLE add ethnicity failed (may already exist):', e.message);
+              ensureIndexes();
+              runPostMigration();
+            });
+          } else {
+            ensureIndexes();
+            runPostMigration();
+          }
         }
       });
     });
@@ -61,6 +104,7 @@ class Database {
         face_shapes: JSON.stringify(["Oval", "Square"]),
         style_type: "Feminine",
         pose: "Straight-on",
+        ethnicity: "Caucasian",
         image_url: "https://images.unsplash.com/photo-1494790108755-2616c96d5e55?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "A timeless short cut that hits just below the chin",
         tags: JSON.stringify(["classic", "professional", "low-maintenance"])
@@ -73,6 +117,7 @@ class Database {
         face_shapes: JSON.stringify(["Oval", "Heart", "Round"]),
         style_type: "Feminine",
         pose: "Angled",
+        ethnicity: "Caucasian",
         image_url: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Effortless wavy style perfect for a casual look",
         tags: JSON.stringify(["casual", "beachy", "textured"])
@@ -85,6 +130,7 @@ class Database {
         face_shapes: JSON.stringify(["Oval", "Long"]),
         style_type: "Feminine",
         pose: "Side",
+        ethnicity: "Asian",
         image_url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Flowing layers that add movement and dimension",
         tags: JSON.stringify(["layered", "voluminous", "elegant"])
@@ -97,6 +143,7 @@ class Database {
         face_shapes: JSON.stringify(["Oval", "Heart"]),
         style_type: "Unisex",
         pose: "Straight-on",
+        ethnicity: "Caucasian",
         image_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Bold and edgy short cut that's easy to maintain",
         tags: JSON.stringify(["edgy", "bold", "low-maintenance"])
@@ -109,6 +156,7 @@ class Database {
         face_shapes: JSON.stringify(["Oval", "Round"]),
         style_type: "Feminine",
         pose: "Angled",
+        ethnicity: "Afro",
         image_url: "https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Textured layers that enhance natural curls",
         tags: JSON.stringify(["curly", "textured", "bohemian"])
@@ -121,6 +169,7 @@ class Database {
         face_shapes: JSON.stringify(["Oval", "Square"]),
         style_type: "Feminine",
         pose: "Straight-on",
+        ethnicity: "Caucasian",
         image_url: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "A sleek long bob with clean, straight lines",
         tags: JSON.stringify(["sleek", "modern", "sophisticated"])
@@ -133,6 +182,7 @@ class Database {
         face_shapes: JSON.stringify(["Oval", "Heart", "Round"]),
         style_type: "Feminine",
         pose: "Angled",
+        ethnicity: "Afro",
         image_url: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Elegant braided style perfect for special occasions",
         tags: JSON.stringify(["braided", "elegant", "formal"])
@@ -145,6 +195,7 @@ class Database {
         face_shapes: JSON.stringify(["Oval", "Square"]),
         style_type: "Feminine",
         pose: "Side",
+        ethnicity: "Asian",
         image_url: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Modern bob with one side longer than the other",
         tags: JSON.stringify(["asymmetrical", "modern", "trendy"])
@@ -157,6 +208,7 @@ class Database {
         face_shapes: JSON.stringify(["Oval", "Heart"]),
         style_type: "Feminine",
         pose: "Straight-on",
+        ethnicity: "Asian",
         image_url: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Ultra-smooth straight hair with a glossy finish",
         tags: JSON.stringify(["sleek", "glossy", "elegant"])
@@ -169,6 +221,7 @@ class Database {
         face_shapes: JSON.stringify(["Round", "Square"]),
         style_type: "Masculine",
         pose: "Angled",
+        ethnicity: "Caucasian",
         image_url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Modern textured crop with defined layers",
         tags: JSON.stringify(["textured", "modern", "edgy"])
@@ -181,6 +234,7 @@ class Database {
         face_shapes: JSON.stringify(["Oval", "Long"]),
         style_type: "Masculine",
         pose: "Straight-on",
+        ethnicity: "Afro",
         image_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Full, bouncy curls with natural volume",
         tags: JSON.stringify(["voluminous", "curly", "natural"])
@@ -193,6 +247,7 @@ class Database {
         face_shapes: JSON.stringify(["Heart", "Long"]),
         style_type: "Feminine",
         pose: "Side",
+        ethnicity: "Caucasian",
         image_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=500&fit=crop&crop=face,focalpoint&fp-x=0.5&fp-y=0.3",
         description: "Elegant side-swept bangs with shoulder-length hair",
         tags: JSON.stringify(["bangs", "elegant", "sophisticated"])
@@ -200,8 +255,8 @@ class Database {
     ];
 
     const stmt = this.db.prepare(`
-      INSERT INTO hairstyles (id, name, category, length, texture, face_shapes, style_type, pose, image_url, description, tags)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO hairstyles (id, name, category, length, texture, face_shapes, style_type, pose, ethnicity, image_url, description, tags)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     sampleHairstyles.forEach(style => {
@@ -214,6 +269,7 @@ class Database {
         style.face_shapes,
         style.style_type,
         style.pose,
+        style.ethnicity,
         style.image_url,
         style.description,
         style.tags
@@ -286,6 +342,17 @@ class Database {
         }
       }
 
+      if (filters.ethnicity) {
+        if (Array.isArray(filters.ethnicity) && filters.ethnicity.length > 0) {
+          const placeholders = filters.ethnicity.map(() => '?').join(',');
+          query += ` AND ethnicity IN (${placeholders})`;
+          params.push(...filters.ethnicity);
+        } else if (typeof filters.ethnicity === 'string') {
+          query += ' AND ethnicity = ?';
+          params.push(filters.ethnicity);
+        }
+      }
+
       if (filters.search) {
         query += ' AND (name LIKE ? OR description LIKE ? OR tags LIKE ?)';
         const searchTerm = `%${filters.search}%`;
@@ -332,8 +399,8 @@ class Database {
     return new Promise((resolve, reject) => {
       const id = uuidv4();
       const stmt = this.db.prepare(`
-        INSERT INTO hairstyles (id, name, category, length, texture, face_shapes, image_url, image_data, description, tags)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO hairstyles (id, name, category, length, texture, face_shapes, style_type, pose, ethnicity, image_url, image_data, description, tags)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       stmt.run([
@@ -343,6 +410,9 @@ class Database {
         hairstyle.length,
         hairstyle.texture,
         JSON.stringify(hairstyle.face_shapes),
+        hairstyle.style_type || 'Unisex',
+        hairstyle.pose || 'Straight-on',
+        hairstyle.ethnicity || null,
         hairstyle.image_url,
         hairstyle.image_data || null,
         hairstyle.description,
@@ -366,7 +436,9 @@ class Database {
         'SELECT DISTINCT texture FROM hairstyles ORDER BY texture',
         'SELECT DISTINCT style_type FROM hairstyles ORDER BY style_type',
         'SELECT DISTINCT pose FROM hairstyles ORDER BY pose',
-        'SELECT face_shapes FROM hairstyles'
+        'SELECT face_shapes FROM hairstyles',
+        // ethnicity may be null if not set
+        'SELECT DISTINCT ethnicity FROM hairstyles WHERE ethnicity IS NOT NULL ORDER BY ethnicity'
       ];
 
       Promise.all(queries.map(query => 
@@ -377,7 +449,7 @@ class Database {
           });
         })
       )).then(results => {
-        const [lengths, textures, styleTypes, poses, faceShapesRows] = results;
+        const [lengths, textures, styleTypes, poses, faceShapesRows, ethnicitiesRows] = results;
         
         // Extract unique face shapes from JSON arrays
         const faceShapesSet = new Set();
@@ -386,14 +458,29 @@ class Database {
           shapes.forEach(shape => faceShapesSet.add(shape));
         });
 
+        const ethnicities = (ethnicitiesRows || []).map(row => row.ethnicity).filter(Boolean);
         resolve({
           lengths: lengths.map(row => row.length),
           textures: textures.map(row => row.texture),
           style_types: styleTypes.map(row => row.style_type),
           poses: poses.map(row => row.pose),
-          face_shapes: Array.from(faceShapesSet).sort()
+          face_shapes: Array.from(faceShapesSet).sort(),
+          ethnicities: ethnicities.length > 0 ? ethnicities : ['Caucasian','Asian','Afro']
         });
       }).catch(reject);
+    });
+  }
+
+  updateHairstyleEthnicity(id, ethnicity) {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        'UPDATE hairstyles SET ethnicity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [ethnicity || null, id],
+        function (err) {
+          if (err) return reject(err);
+          resolve({ updated: this.changes > 0 });
+        }
+      );
     });
   }
 

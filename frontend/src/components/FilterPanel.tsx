@@ -10,6 +10,7 @@ interface FilterPanelProps {
     face_shape: string[];
     style_type: string[];
     pose: string[];
+    ethnicity: string[];
     search: string;
   };
   onFilterChange: (filterType: string, value: string[] | string) => void;
@@ -36,9 +37,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   };
 
   const renderIconButtons = (
-    items: string[], 
-    activeValues: string[], 
-    filterType: string, 
+    items: string[],
+    activeValues: string[],
+    filterType: string,
     iconType: 'face' | 'length' | 'texture' | 'style' | 'pose'
   ) => (
     <div className="flex flex-wrap gap-2">
@@ -66,6 +67,42 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
             }`}
           >
             {renderIcon(iconType, item, isActive)}
+            {item}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const renderTextButtons = (
+    items: string[],
+    activeValues: string[],
+    filterType: string,
+  ) => (
+    <div className="flex flex-wrap gap-2">
+      <button
+        onClick={() => onFilterChange(filterType, [])}
+        className={`px-4 py-2 rounded-full border-2 transition-colors text-sm font-medium ${
+          activeValues.length === 0
+            ? 'border-blue-400 bg-blue-500/10 text-blue-600'
+            : 'border-gray-200 bg-white/90 text-gray-700 hover:border-blue-300 hover:bg-blue-50'
+        }`}
+      >
+        All
+      </button>
+      {items.map((item) => {
+        const isActive = activeValues.includes(item);
+        const next = isActive ? activeValues.filter(v => v !== item) : [...activeValues, item];
+        return (
+          <button
+            key={item}
+            onClick={() => onFilterChange(filterType, next)}
+            className={`px-4 py-2 rounded-full border-2 transition-colors text-sm font-medium ${
+              isActive
+                ? 'border-blue-400 bg-blue-500/12 text-blue-600'
+                : 'border-gray-200 bg-white/90 text-gray-700 hover:border-blue-300 hover:bg-blue-50'
+            }`}
+          >
             {item}
           </button>
         );
@@ -119,6 +156,14 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
             Pose
           </label>
           {renderIconButtons(filters.poses, activeFilters.pose, 'pose', 'pose')}
+        </div>
+
+        {/* Ethnicity Filter */}
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-semibold text-gray-700">
+            Ethnicity
+          </label>
+          {renderTextButtons(filters.ethnicities || [], activeFilters.ethnicity, 'ethnicity')}
         </div>
       </div>
 

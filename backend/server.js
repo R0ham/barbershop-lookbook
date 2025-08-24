@@ -32,7 +32,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Routes
 app.get('/api/hairstyles', async (req, res) => {
   try {
-    const { length, texture, face_shape, style_type, pose, search } = req.query;
+    const { length, texture, face_shape, style_type, pose, ethnicity, search } = req.query;
     const splitOrPass = (val) => typeof val === 'string' && val.includes(',') ? val.split(',').map(v => v.trim()).filter(Boolean) : val;
     const filters = {
       length: splitOrPass(length),
@@ -40,6 +40,7 @@ app.get('/api/hairstyles', async (req, res) => {
       face_shape: splitOrPass(face_shape),
       style_type: splitOrPass(style_type),
       pose: splitOrPass(pose),
+      ethnicity: splitOrPass(ethnicity),
       search
     };
     const hairstyles = await db.getAllHairstyles(filters);
@@ -76,10 +77,24 @@ app.get('/api/filters', async (req, res) => {
   }
 });
 
+// Update a hairstyle's ethnicity
+app.put('/api/hairstyles/:id/ethnicity', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { ethnicity } = req.body || {};
+    const result = await db.updateHairstyleEthnicity(id, ethnicity);
+    if (!result.updated) return res.status(404).json({ error: 'Hairstyle not found' });
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Error updating ethnicity:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Upload new hairstyle with image
 app.post('/api/hairstyles', upload.single('image'), async (req, res) => {
   try {
-    const { name, category, length, texture, face_shapes, description, tags, image_url } = req.body;
+    const { name, category, length, texture, face_shapes, style_type, pose, ethnicity, description, tags, image_url } = req.body;
     
     const hairstyleData = {
       name,
@@ -87,6 +102,9 @@ app.post('/api/hairstyles', upload.single('image'), async (req, res) => {
       length,
       texture,
       face_shapes: JSON.parse(face_shapes || '[]'),
+      style_type,
+      pose,
+      ethnicity,
       description,
       tags: JSON.parse(tags || '[]'),
       image_url: image_url || null,

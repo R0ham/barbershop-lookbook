@@ -14,7 +14,8 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     textures: [],
     face_shapes: [],
     style_types: [],
-    poses: []
+    poses: [],
+    ethnicities: []
   });
   const [activeFilters, setActiveFilters] = useState({
     length: [] as string[],
@@ -22,9 +23,15 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     face_shape: [] as string[],
     style_type: [] as string[],
     pose: [] as string[],
+    ethnicity: [] as string[],
     search: ''
   });
   const [selectedHairstyle, setSelectedHairstyle] = useState<Hairstyle | null>(null);
+  const isAdmin = React.useMemo(() => {
+    try {
+      return new URLSearchParams(window.location.search).get('admin') === '1';
+    } catch { return false; }
+  }, []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -43,15 +50,16 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   const faceDep = activeFilters.face_shape.join(',');
   const styleDep = activeFilters.style_type.join(',');
   const poseDep = activeFilters.pose.join(',');
+  const ethnicityDep = activeFilters.ethnicity.join(',');
   useEffect(() => {
     fetchHairstyles();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lengthDep, textureDep, faceDep, styleDep, poseDep, activeFilters.search]);
+  }, [lengthDep, textureDep, faceDep, styleDep, poseDep, ethnicityDep, activeFilters.search]);
 
   // Reset page to 1 when filters/search change or data changes
   useEffect(() => {
     setPage(1);
-  }, [lengthDep, textureDep, faceDep, styleDep, poseDep, activeFilters.search]);
+  }, [lengthDep, textureDep, faceDep, styleDep, poseDep, ethnicityDep, activeFilters.search]);
 
   // If headerSearch prop changes, run the existing search handler to sync filters
   useEffect(() => {
@@ -78,10 +86,30 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       if (!response.ok) throw new Error('Failed to fetch filters');
       const data = await response.json();
       // Ensure compatibility if backend still returns categories
-      const { lengths, textures, face_shapes, style_types, poses } = data;
-      setFilters({ lengths, textures, face_shapes, style_types, poses });
+      const { lengths, textures, face_shapes, style_types, poses, ethnicities } = data;
+      const defaultEth = ['Caucasian', 'Asian', 'Afro'];
+      const eth = Array.isArray(ethnicities) && ethnicities.length > 0 ? ethnicities : defaultEth;
+      setFilters({ lengths, textures, face_shapes, style_types, poses, ethnicities: eth });
     } catch (err) {
       console.error('Error fetching filters:', err);
+    }
+  };
+
+  const updateEthnicity = async (id: string, ethnicity: string) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/hairstyles/${id}/ethnicity`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ethnicity })
+      });
+      if (!res.ok) throw new Error('Failed to update ethnicity');
+      // Update local lists
+      setHairstyles(prev => prev.map(h => h.id === id ? { ...h, ethnicity } : h));
+      setFilteredHairstyles(prev => prev.map(h => h.id === id ? { ...h, ethnicity } : h));
+      if (selectedHairstyle && selectedHairstyle.id === id) setSelectedHairstyle({ ...selectedHairstyle, ethnicity });
+    } catch (e) {
+      console.error('Error updating ethnicity:', e);
+      alert('Failed to update ethnicity');
     }
   };
 
@@ -153,12 +181,14 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     const faces = filters.face_shapes || [];
     const styles = filters.style_types || [];
     const poses = filters.poses || [];
+    const ethnics = filters.ethnicities || [];
 
     const lengthMap = makeMap(lengths);
     const textureMap = makeMap(textures);
     const faceMap = makeMap(faces);
     const styleMap = makeMap(styles);
     const poseMap = makeMap(poses);
+    const ethnicMap = makeMap(ethnics);
 
     const matched = {
       length: [] as string[],
@@ -166,6 +196,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       face_shape: [] as string[],
       style_type: [] as string[],
       pose: [] as string[],
+      ethnicity: [] as string[],
     };
 
     // Phrase/alias rules (extendable)
@@ -221,6 +252,8 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       if (s) { matched.style_type.push(s); return; }
       const p = tryMatch(n, poses, poseMap);
       if (p) { matched.pose.push(p); return; }
+      const e = tryMatch(n, ethnics, ethnicMap);
+      if (e) { matched.ethnicity.push(e); return; }
       remaining.push(tok);
     });
 
@@ -234,6 +267,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
         face_shape: mergeUnique(prev.face_shape, matched.face_shape),
         style_type: mergeUnique(prev.style_type, matched.style_type),
         pose: mergeUnique(prev.pose, matched.pose),
+        ethnicity: mergeUnique(prev.ethnicity, matched.ethnicity),
         search: remaining.join(' ')
       };
 
@@ -243,6 +277,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
         shallowArrayEqual(prev.face_shape, next.face_shape) &&
         shallowArrayEqual(prev.style_type, next.style_type) &&
         shallowArrayEqual(prev.pose, next.pose) &&
+        shallowArrayEqual(prev.ethnicity, next.ethnicity) &&
         prev.search === next.search;
       return noChange ? prev : next;
     });
@@ -257,13 +292,14 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       face_shape: [],
       style_type: [],
       pose: [],
+      ethnicity: [],
       search: ''
     });
   };
 
   // Handler for clicks coming from cards to apply a single filter value
   const onApplyFilter = (
-    type: 'length' | 'texture' | 'style_type' | 'pose' | 'face_shape',
+    type: 'length' | 'texture' | 'style_type' | 'pose' | 'face_shape' | 'ethnicity',
     value: string,
     anchorId?: string
   ) => {
@@ -355,6 +391,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
               activeFilters.face_shape.length > 0 ||
               activeFilters.style_type.length > 0 ||
               activeFilters.pose.length > 0 ||
+              activeFilters.ethnicity.length > 0 ||
               (activeFilters.search?.trim() ?? '') !== '';
             return (
               <>
@@ -392,6 +429,9 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
                   onClick={() => setSelectedHairstyle(hairstyle)}
                   onApplyFilter={onApplyFilter}
                   activeFilters={activeFilters}
+                  adminMode={isAdmin}
+                  ethnicityOptions={filters.ethnicities}
+                  onUpdateEthnicity={updateEthnicity}
                 />
               ))}
             </div>
