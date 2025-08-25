@@ -9,7 +9,7 @@ A modern web application built with React, Tailwind CSS, and Node.js to help use
 - **Search Functionality**: Search hairstyles by name, description, or tags
 - **Detailed View**: Click on any hairstyle for a detailed modal with full information
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
-- **Database Storage**: All images and metadata stored in SQLite database
+- **Database Storage**: Local dev uses SQLite; production uses Neon (Postgres)
 
 ## Tech Stack
 
@@ -21,7 +21,8 @@ A modern web application built with React, Tailwind CSS, and Node.js to help use
 
 ### Backend
 - Node.js with Express
-- SQLite database for data storage
+- SQLite (local development)
+- Netlify Functions + Neon Postgres (production)
 - RESTful API endpoints
 - Image upload support with Multer
 
@@ -53,6 +54,15 @@ npm install
 
 ### Running the Application
 
+#### Local development (.env required)
+Create `frontend/.env` to point the frontend to your local backend:
+
+```ini
+REACT_APP_API_BASE_URL=http://localhost:5001
+```
+
+Then run the servers:
+
 1. Start the backend server:
 ```bash
 cd backend
@@ -66,6 +76,10 @@ cd frontend
 npm start
 ```
 The frontend will run on http://localhost:3000
+
+Notes:
+- Local DB persistence is via `backend/hairstyles.db` (SQLite).
+- If you omit `REACT_APP_API_BASE_URL` in local dev, the frontend will attempt to call same-origin `/api/*` (Netlify Functions), which is intended for production.
 
 ## API Endpoints
 
@@ -83,6 +97,27 @@ The SQLite database includes:
 - Tags and descriptions
 - Timestamps for creation and updates
 
+## Production Deployment
+
+- Hosting: Netlify (static frontend) + Netlify Functions for API.
+- Database: Neon (Postgres).
+
+Configure environment variables in Netlify Site settings:
+
+```
+DATABASE_URL=<your Neon connection string>
+# Example: postgres://user:password@ep-xxxx.us-east-2.aws.neon.tech/db?sslmode=require
+```
+
+Routing and build settings are defined in the root `netlify.toml`:
+- Base directory: `frontend`
+- Build command: `npm run build`
+- Publish directory: `build`
+- Functions directory: `netlify/functions` (relative to base)
+- Redirect `/api/*` → `/.netlify/functions/api/:splat`
+
+The frontend uses same-origin `/api/*` in production. Do not set `REACT_APP_API_BASE_URL` in Netlify unless you intend to call an external API origin.
+
 ## Contributing
 
 1. Fork the repository
@@ -93,3 +128,4 @@ The SQLite database includes:
 ## License
 
 MIT License
+
