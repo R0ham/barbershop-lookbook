@@ -10,7 +10,7 @@
 [functions]
   # Bundle functions with esbuild and keep them in the default repo root
   node_bundler = "esbuild"
-  directory = "frontend/netlify/functions"
+  directory = "netlify/functions"
 
 # Proxy API routes to the Netlify Function (must come before SPA fallbacks)
 [[redirects]]
