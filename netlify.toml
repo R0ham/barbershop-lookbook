@@ -1,0 +1,30 @@
+# Root-level Netlify config so UI and builds are consistent
+[build]
+  base = "frontend"          # run build from the frontend subdir
+  command = "npm run build"
+  publish = "build"          # publish dir relative to base
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[functions]
+  # Bundle functions with esbuild and keep them in the default repo root
+  node_bundler = "esbuild"
+  directory = "netlify/functions"
+
+# Proxy API routes to the Netlify Function (must come before SPA fallbacks)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+# SPA fallback
+[[redirects]]
+  from = "/_/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -4,7 +4,9 @@ import HairstyleCard from './HairstyleCard';
 import FilterPanel from './FilterPanel';
 import HairstyleModal from './HairstyleModal';
 
-const API_BASE_URL = 'http://localhost:5001/api';
+// Prefer environment variable in production (e.g., Netlify) and fall back to same-origin in prod
+// If you want to use a local backend in dev, set REACT_APP_API_BASE_URL=http://localhost:5001
+const API_BASE_URL = ((process.env.REACT_APP_API_BASE_URL ?? '')) + '/api';
 
 const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch }) => {
   const [filteredHairstyles, setFilteredHairstyles] = useState<Hairstyle[]>([]);

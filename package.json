@@ -1,0 +1,10 @@
+{
+  "name": "hairstyles-gallery-root",
+  "private": true,
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "pg": "^8.12.0",
+    "uuid": "^9.0.1"
+  }
+}
