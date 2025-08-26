@@ -4,16 +4,26 @@
 const { Pool } = require('pg');
 const { v4: uuidv4 } = require('uuid');
 
-// One pool per function instance (reused across invocations)
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+// Create Pool lazily after validating env, reuse across invocations
+let pool;
 
 let initPromise;
 async function init() {
   if (initPromise) return initPromise;
   initPromise = (async () => {
+    const conn = process.env.DATABASE_URL;
+    // Validate DATABASE_URL early for clearer errors in production
+    if (!conn || !/^postgres(ql)?:\/\//i.test(conn)) {
+      throw new Error('DATABASE_URL is missing or invalid. Set a Neon Postgres connection string with sslmode=require');
+    }
+
+    if (!pool) {
+      pool = new Pool({
+        connectionString: conn,
+        ssl: { rejectUnauthorized: false }
+      });
+    }
+
     // Create schema if not exists
     await pool.query(`
       CREATE TABLE IF NOT EXISTS hairstyles (
