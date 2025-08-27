@@ -381,3 +381,53 @@ body::after {
     0 1px 4px -2px rgba(0,0,0,0.10);     /* contact */
   transform: rotate(0deg) translateY(-1px);
 }
+
+/* Animated barbershop pole (replaces scissors emoji) */
+.barber-pole {
+  display: inline-block;
+  position: relative;
+  width: 18px; /* will be overridden by inline style for sizes */
+  height: 36px; /* will be overridden by inline style for sizes */
+  border-radius: 10px;
+  border: 2px solid #cbd5e1; /* slate-300 */
+  /* Tiled diagonal stripes: one tile = 24px, loop by shifting exactly 24px */
+  background-image: linear-gradient(
+    45deg,
+    #e11d48 0 25%,      /* red */
+    #ffffff 25% 50%,    /* white */
+    #1d4ed8 50% 75%,    /* blue */
+    #ffffff 75% 100%    /* white */
+  );
+  background-size: 24px 24px; /* tile size for seamless loop */
+  background-position: 0 0;
+  animation: pole-spin 2.2s linear infinite;
+  box-shadow:
+    inset 0 0 0 2px #e5e7eb,                /* inner ring */
+    inset 0 0 6px rgba(0,0,0,0.15),         /* inner glow */
+    0 2px 6px rgba(0,0,0,0.15);             /* drop shadow */
+}
+.barber-pole::before,
+.barber-pole::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130%;
+  height: 6px;
+  background: linear-gradient(#f3f4f6, #e5e7eb); /* light gray cap */
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  box-shadow: 0 2px 2px rgba(0,0,0,0.08);
+}
+.barber-pole::before { top: -8px; }
+.barber-pole::after  { bottom: -8px; }
+
+@keyframes pole-spin {
+  0%   { background-position: 0 0; }
+  100% { background-position: 0 24px; } /* shift exactly one tile height */
+}
+
+/* Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .barber-pole { animation: none !important; }
+}
