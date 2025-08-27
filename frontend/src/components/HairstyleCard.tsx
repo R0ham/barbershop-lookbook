@@ -1,4 +1,4 @@
-import React, { useState, memo } from 'react';
+import React, { useState, memo, useRef, useEffect } from 'react';
 import { Hairstyle } from '../types';
 import { getMinimalIcon } from './MinimalIcons';
 
@@ -22,14 +22,122 @@ interface HairstyleCardProps {
   adminMode?: boolean;
   ethnicityOptions?: string[];
   onUpdateEthnicity?: (id: string, ethnicity: string) => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
 }
 
-const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApplyFilter, activeFilters, adminMode, ethnicityOptions = [], onUpdateEthnicity }) => {
+const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApplyFilter, activeFilters, adminMode, ethnicityOptions = [], onUpdateEthnicity, isFavorite = false, onToggleFavorite }) => {
   const [imageLoaded, setImageLoaded] = useState(true);
   const [facesExpanded, setFacesExpanded] = useState(false);
   const [pendingEth, setPendingEth] = useState<string>(hairstyle.ethnicity || '');
   const [savedTick, setSavedTick] = useState(false);
   const cardId = React.useMemo(() => `hs-card-${hairstyle.id}`, [hairstyle.id]);
+  const popRef = useRef<HTMLDivElement | null>(null);
+  const clickTimeoutRef = useRef<number | undefined>(undefined);
+  const badgeRevealTimeoutRef = useRef<number | undefined>(undefined);
+  const badgeAppearResetRef = useRef<number | undefined>(undefined);
+  const popAnimRef = useRef<Animation | null>(null);
+  const [hideBadgeUntilPopDone, setHideBadgeUntilPopDone] = useState(false);
+  const [badgeAppearing, setBadgeAppearing] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current) {
+        window.clearTimeout(clickTimeoutRef.current);
+        clickTimeoutRef.current = undefined;
+      }
+      if (badgeRevealTimeoutRef.current) {
+        window.clearTimeout(badgeRevealTimeoutRef.current);
+        badgeRevealTimeoutRef.current = undefined;
+      }
+      if (badgeAppearResetRef.current) {
+        window.clearTimeout(badgeAppearResetRef.current);
+        badgeAppearResetRef.current = undefined;
+      }
+    };
+  }, []);
+
+  const playHeartPop = (onDone?: () => void) => {
+    const el = popRef.current as HTMLDivElement | null;
+    if (!el || !('animate' in el)) return;
+    try {
+      el.style.visibility = 'visible';
+      el.style.opacity = '1';
+      const anim = el.animate([
+        { transform: 'scale(0.7)', opacity: 0 },
+        { transform: 'scale(1.15)', opacity: 1, offset: 0.5 },
+        { transform: 'scale(1)', opacity: 0 }
+      ], { duration: 600, easing: 'ease-out' });
+      popAnimRef.current = anim as unknown as Animation;
+      anim.onfinish = () => {
+        el.style.opacity = '0';
+        el.style.visibility = 'hidden';
+        onDone && onDone();
+        popAnimRef.current = null;
+      };
+    } catch {}
+  };
+
+  const cancelPendingOpen = () => {
+    if (clickTimeoutRef.current) {
+      window.clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = undefined;
+    }
+  };
+
+  const toggleFavWithPop = () => {
+    if (!isFavorite) {
+      // Delay the badge until pop completes
+      setHideBadgeUntilPopDone(true);
+      playHeartPop();
+      // Reveal badge slightly before pop ends to feel continuous
+      if (badgeRevealTimeoutRef.current) window.clearTimeout(badgeRevealTimeoutRef.current);
+      badgeRevealTimeoutRef.current = window.setTimeout(() => {
+        setHideBadgeUntilPopDone(false);
+        setBadgeAppearing(true);
+        if (badgeAppearResetRef.current) window.clearTimeout(badgeAppearResetRef.current);
+        badgeAppearResetRef.current = window.setTimeout(() => {
+          setBadgeAppearing(false);
+          badgeAppearResetRef.current = undefined;
+        }, 220);
+        badgeRevealTimeoutRef.current = undefined;
+      }, 520); // pop duration 600ms -> reveal 80ms before end
+    } else {
+      // If unfavoriting, ensure no pending delay keeps badge hidden later
+      setHideBadgeUntilPopDone(false);
+      setBadgeAppearing(false);
+      if (badgeRevealTimeoutRef.current) { window.clearTimeout(badgeRevealTimeoutRef.current); badgeRevealTimeoutRef.current = undefined; }
+      if (badgeAppearResetRef.current) { window.clearTimeout(badgeAppearResetRef.current); badgeAppearResetRef.current = undefined; }
+      // Cancel any ongoing pop animation and hide overlay immediately
+      const el = popRef.current as HTMLDivElement | null;
+      if (popAnimRef.current) { try { popAnimRef.current.cancel(); } catch {} popAnimRef.current = null; }
+      if (el) { el.style.opacity = '0'; el.style.visibility = 'hidden'; }
+    }
+    onToggleFavorite && onToggleFavorite();
+  };
+
+  const handleCardDoubleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Cancel pending single-click open
+    cancelPendingOpen();
+    toggleFavWithPop();
+    try {
+      (e.currentTarget as HTMLElement)?.animate?.([
+        { transform: 'scale(0.985)' },
+        { transform: 'scale(1)' },
+      ], { duration: 140, easing: 'ease-out' });
+    } catch {}
+  };
+
+  const handleCardClick = (_e: React.MouseEvent) => {
+    // Delay opening to allow time for a potential double-click
+    if (clickTimeoutRef.current) window.clearTimeout(clickTimeoutRef.current);
+    clickTimeoutRef.current = window.setTimeout(() => {
+      clickTimeoutRef.current = undefined;
+      onClick();
+    }, 250);
+  };
 
   const animatePill = (el?: Element | null) => {
     if (!el || !(el as HTMLElement).animate) return;
@@ -113,7 +221,12 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
   }
 
   return (
-    <div id={cardId} className="relative collage-card hs-card cursor-pointer bg-transparent" onClick={onClick}>
+    <div
+      id={cardId}
+      className="relative collage-card hs-card cursor-pointer bg-transparent"
+      onClick={handleCardClick}
+      onDoubleClick={handleCardDoubleClick}
+    >
       {/* Admin toolbar */}
       {adminMode && (
         <div
@@ -154,16 +267,48 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
       <div className="flex flex-col gap-2 md:gap-3 p-0 bg-transparent">
         {/* Image */}
         <div className="photo-frame">
-          <div className="photo-image-wrap">
+          <div
+            className="photo-image-wrap select-none"
+            onDoubleClick={(e) => {
+              // Double-clicking the image toggles favorite and should not open the modal
+              e.preventDefault();
+              e.stopPropagation();
+              cancelPendingOpen();
+              toggleFavWithPop();
+              try {
+                // little pop animation on the wrapper
+                (e.currentTarget as HTMLElement)?.animate?.([
+                  { transform: 'scale(0.98)' },
+                  { transform: 'scale(1)' },
+                ], { duration: 160, easing: 'ease-out' });
+              } catch {}
+            }}
+          >
             <img
-              className="hs-card-img w-full object-cover object-center"
+              className="hs-card-img w-full object-cover object-center select-none"
               src={hairstyle.image_url}
               alt={hairstyle.name}
               loading="lazy"
               decoding="async"
               onError={handleImageError}
               onLoad={handleImageLoad}
+              draggable={false}
+              onDoubleClick={(e) => { e.preventDefault(); e.stopPropagation(); cancelPendingOpen(); toggleFavWithPop(); }}
             />
+            {/* Small bottom-right heart when favorited (delayed until pop completes) */}
+            {isFavorite && !hideBadgeUntilPopDone && (
+              <div className={`absolute bottom-2 right-2 z-10 rounded-full bg-white/90 backdrop-blur border border-gray-200 p-1.5 shadow text-rose-600 transition-all duration-200 ${badgeAppearing ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}`}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </div>
+            )}
+            {/* Center heart pop animation (grid only). Hidden by default via inline style. */}
+            <div ref={popRef} className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ opacity: 0, visibility: 'hidden' }}>
+              <svg width="110" height="110" viewBox="0 0 24 24" fill="rgba(244,63,94,0.85)" stroke="rgba(244,63,94,0.95)" strokeWidth="0" style={{ filter: 'drop-shadow(0 6px 12px rgba(244,63,94,0.35))' }}>
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </div>
             {sourceHost && (
               <a
                 href={hairstyle.image_url}
@@ -186,7 +331,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
         </div>
         {/* Description */}
         <div className="paper-sheet p-4 md:p-5">
-          <p className="text-gray-600 text-sm mb-4 leading-6 line-clamp-2">{hairstyle.description}</p>
+          <p className="text-gray-600 text-sm mb-4 leading-6 line-clamp-2 select-none">{hairstyle.description}</p>
           <div className="flex flex-wrap gap-2 mb-3">
             {/* Length */}
             {!isAny(hairstyle.length) && (

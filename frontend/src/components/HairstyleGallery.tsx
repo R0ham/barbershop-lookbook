@@ -27,7 +27,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     ethnicity: [] as string[],
     search: ''
   });
-  const [selectedHairstyle, setSelectedHairstyle] = useState<Hairstyle | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const isAdmin = React.useMemo(() => {
     try {
       return new URLSearchParams(window.location.search).get('admin') === '1';
@@ -39,6 +39,26 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   const pageSize = 24;
   const lastScrollYRef = useRef<number | null>(null);
   const lastAnchorIdRef = useRef<string | null>(null);
+  // Favorite IDs are stored locally in the browser
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem('hs_favorites');
+      if (!raw) return new Set();
+      const arr = JSON.parse(raw) as string[];
+      return new Set(arr);
+    } catch { return new Set(); }
+  });
+  const persistFavorites = (next: Set<string>) => {
+    try { localStorage.setItem('hs_favorites', JSON.stringify(Array.from(next))); } catch {}
+  };
+  const toggleFavorite = (id: string) => {
+    setFavoriteIds(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      persistFavorites(n);
+      return n;
+    });
+  };
   // Disable scroll restoration to avoid menu/popover clipping during filter changes
   const enableScrollRestore = false;
 
@@ -112,7 +132,10 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       if (!res.ok) throw new Error('Failed to update ethnicity');
       // Update local lists
       setFilteredHairstyles(prev => prev.map(h => h.id === id ? { ...h, ethnicity } : h));
-      if (selectedHairstyle && selectedHairstyle.id === id) setSelectedHairstyle({ ...selectedHairstyle, ethnicity });
+      // If the modal is open on this item, ensure the in-modal view reflects the change
+      if (selectedIndex != null) {
+        setSelectedIndex((idx) => idx); // no-op to trigger re-render
+      }
     } catch (e) {
       console.error('Error updating ethnicity:', e);
       alert('Failed to update ethnicity');
@@ -439,12 +462,17 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
                 <HairstyleCard
                   key={hairstyle.id}
                   hairstyle={hairstyle}
-                  onClick={() => setSelectedHairstyle(hairstyle)}
+                  onClick={() => {
+                    const idx = filteredHairstyles.findIndex(h => String(h.id) === String(hairstyle.id));
+                    if (idx >= 0) setSelectedIndex(idx);
+                  }}
                   onApplyFilter={onApplyFilter}
                   activeFilters={activeFilters}
                   adminMode={isAdmin}
                   ethnicityOptions={filters.ethnicities}
                   onUpdateEthnicity={updateEthnicity}
+                  isFavorite={favoriteIds.has(String(hairstyle.id))}
+                  onToggleFavorite={() => toggleFavorite(String(hairstyle.id))}
                 />
               ))}
             </div>
@@ -473,11 +501,24 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
         </>
       )}
 
-      {/* Modal */}
-      {selectedHairstyle && (
+      {/* Modal with carousel */}
+      {selectedIndex != null && filteredHairstyles[selectedIndex] && (
         <HairstyleModal
-          hairstyle={selectedHairstyle}
-          onClose={() => setSelectedHairstyle(null)}
+          hairstyle={filteredHairstyles[selectedIndex]}
+          onClose={() => setSelectedIndex(null)}
+          onPrev={() => setSelectedIndex((idx) => {
+            if (idx == null) return idx;
+            const n = filteredHairstyles.length;
+            return (idx - 1 + n) % n;
+          })}
+          onNext={() => setSelectedIndex((idx) => {
+            if (idx == null) return idx;
+            const n = filteredHairstyles.length;
+            return (idx + 1) % n;
+          })}
+          isFavorite={favoriteIds.has(String(filteredHairstyles[selectedIndex].id))}
+          onToggleFavorite={() => toggleFavorite(String(filteredHairstyles[selectedIndex].id))}
+          onApplyFilter={(type, value) => onApplyFilter(type, value)}
         />
       )}
     </div>
