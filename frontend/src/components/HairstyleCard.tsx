@@ -149,6 +149,12 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
     } catch {}
   };
 
+  // Prevent double-click on pills from triggering favorite logic
+  const handlePillDoubleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   const handleImageError = () => {
     setImageLoaded(false);
   };
@@ -215,15 +221,13 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
     return arr;
   }, [hairstyle.face_shapes, hairstyle.ethnicity]);
 
-  // Don't render the card if image failed to load
-  if (!imageLoaded) {
-    return null;
-  }
+  // Always render the card, even if image failed to load. We no longer hide the card on image error
+  // to keep result counts consistent with the rendered grid.
 
   return (
     <div
       id={cardId}
-      className="relative collage-card hs-card cursor-pointer bg-transparent"
+      className="relative collage-card hs-card cursor-pointer bg-transparent group"
       onClick={handleCardClick}
       onDoubleClick={handleCardDoubleClick}
     >
@@ -284,38 +288,65 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
               } catch {}
             }}
           >
-            <img
-              className="hs-card-img w-full object-cover object-center select-none"
-              src={hairstyle.image_url}
-              alt={hairstyle.name}
-              loading="lazy"
-              decoding="async"
-              onError={handleImageError}
-              onLoad={handleImageLoad}
-              draggable={false}
-              onDoubleClick={(e) => { e.preventDefault(); e.stopPropagation(); cancelPendingOpen(); toggleFavWithPop(); }}
-            />
-            {/* Small bottom-right heart when favorited (delayed until pop completes) */}
-            {isFavorite && !hideBadgeUntilPopDone && (
-              <div className={`absolute bottom-2 right-2 z-10 rounded-full bg-white/90 backdrop-blur border border-gray-200 p-1.5 shadow text-rose-600 transition-all duration-200 ${badgeAppearing ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}`}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
-                </svg>
+            {imageLoaded ? (
+              <>
+                <img
+                  className="hs-card-img w-full object-cover object-center select-none"
+                  src={hairstyle.image_url}
+                  alt={hairstyle.name}
+                  loading="lazy"
+                  decoding="async"
+                  onError={handleImageError}
+                  onLoad={handleImageLoad}
+                  draggable={false}
+                  onDoubleClick={(e) => { e.preventDefault(); e.stopPropagation(); cancelPendingOpen(); toggleFavWithPop(); }}
+                />
+                {/* Small bottom-right heart when favorited (delayed until pop completes) */}
+                {isFavorite && !hideBadgeUntilPopDone && (
+                  <div className={`absolute bottom-2 right-2 z-10 rounded-full bg-white/90 backdrop-blur border border-gray-200 p-1.5 shadow text-rose-600 transition-all duration-200 ${badgeAppearing ? 'opacity-0 scale-90' : 'opacity-100 scale-100'}`}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                  </div>
+                )}
+                {/* Bottom-right heart toggle when favorited */}
+                {isFavorite && (
+                  <button
+                    type="button"
+                    aria-label="Unfavorite"
+                    title="Remove from favorites"
+                    className="absolute bottom-2 right-2 z-10 bg-white/90 backdrop-blur rounded-full border border-gray-200 shadow p-2 hover:bg-white"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleFavorite && onToggleFavorite(); }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="rgba(244,63,94,0.9)" stroke="none">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
+                    </svg>
+                  </button>
+                )}
+                {/* Center heart pop animation (grid only). Hidden by default via inline style. */}
+                <div ref={popRef} className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ opacity: 0, visibility: 'hidden' }}>
+                  <svg width="110" height="110" viewBox="0 0 24 24" fill="rgba(244,63,94,0.85)" stroke="rgba(244,63,94,0.95)" strokeWidth="0" style={{ filter: 'drop-shadow(0 6px 12px rgba(244,63,94,0.35))' }}>
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
+                  </svg>
+                </div>
+              </>
+            ) : (
+              <div className="relative w-[300px] h-[500px] md:h-[40vh] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 rounded-md animate-pulse flex items-center justify-center select-none mx-auto">
+                <div className="flex flex-col items-center text-gray-500">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" className="opacity-70 mb-2">
+                    <path d="M21 19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2l1-2h8l1 2h2a2 2 0 0 1 2 2v11zM7 13l2.5 3.01L12 13l3 4H6l1-1z" />
+                  </svg>
+                  <span className="text-sm">Image unavailable</span>
+                </div>
               </div>
             )}
-            {/* Center heart pop animation (grid only). Hidden by default via inline style. */}
-            <div ref={popRef} className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ opacity: 0, visibility: 'hidden' }}>
-              <svg width="110" height="110" viewBox="0 0 24 24" fill="rgba(244,63,94,0.85)" stroke="rgba(244,63,94,0.95)" strokeWidth="0" style={{ filter: 'drop-shadow(0 6px 12px rgba(244,63,94,0.35))' }}>
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            </div>
             {sourceHost && (
               <a
                 href={hairstyle.image_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => { e.stopPropagation(); }}
-                className="img-attrib"
+                className="img-attrib opacity-80 group-hover:opacity-35 transition-opacity duration-200"
                 title={`Open source: ${sourceHost}`}
               >
                 {sourceHost}
@@ -342,6 +373,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('length', hairstyle.length, cardId); animatePill(e.currentTarget as HTMLElement); } }}
                 className={pillStyles('length', isSelected('length', hairstyle.length)).className}
+                onDoubleClick={handlePillDoubleClick}
               >
                 {getMinimalIcon('length', hairstyle.length, 20, pillStyles('length', isSelected('length', hairstyle.length)).icon)}
                 {hairstyle.length}
@@ -356,6 +388,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('texture', hairstyle.texture, cardId); animatePill(e.currentTarget as HTMLElement); } }}
                 className={pillStyles('texture', isSelected('texture', hairstyle.texture)).className}
+                onDoubleClick={handlePillDoubleClick}
               >
                 {getMinimalIcon('texture', hairstyle.texture, 20, pillStyles('texture', isSelected('texture', hairstyle.texture)).icon)}
                 {hairstyle.texture}
@@ -370,6 +403,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('style_type', hairstyle.style_type, cardId); animatePill(e.currentTarget as HTMLElement); } }}
                 className={pillStyles('style_type', isSelected('style_type', hairstyle.style_type)).className}
+                onDoubleClick={handlePillDoubleClick}
               >
                 {getMinimalIcon('style', hairstyle.style_type, 20, pillStyles('style_type', isSelected('style_type', hairstyle.style_type)).icon)}
                 {hairstyle.style_type}
@@ -384,6 +418,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter('pose', hairstyle.pose, cardId); animatePill(e.currentTarget as HTMLElement); } }}
                 className={pillStyles('pose', isSelected('pose', hairstyle.pose)).className}
+                onDoubleClick={handlePillDoubleClick}
               >
                 {getMinimalIcon('pose', hairstyle.pose, 20, pillStyles('pose', isSelected('pose', hairstyle.pose)).icon)}
                 {hairstyle.pose}
@@ -402,6 +437,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
                   tabIndex={0}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); (e as any).stopPropagation?.(); onApplyFilter && onApplyFilter(isEth ? 'ethnicity' : 'face_shape', val, cardId); animatePill(e.currentTarget as HTMLElement); } }}
                   className={pillStyles(isEth ? 'ethnicity' : 'face_shape', isSelected(isEth ? 'ethnicity' : 'face_shape', val)).className}
+                  onDoubleClick={handlePillDoubleClick}
                 >
                   {getMinimalIcon(isEth ? 'ethnicity' : 'face', val, 20, pillStyles(isEth ? 'ethnicity' : 'face_shape', isSelected(isEth ? 'ethnicity' : 'face_shape', val)).icon)}
                   {val}

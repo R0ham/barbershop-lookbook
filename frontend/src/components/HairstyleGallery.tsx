@@ -4,9 +4,16 @@ import HairstyleCard from './HairstyleCard';
 import FilterPanel from './FilterPanel';
 import HairstyleModal from './HairstyleModal';
 
-// Prefer environment variable in production (e.g., Netlify) and fall back to same-origin in prod
-// If you want to use a local backend in dev, set REACT_APP_API_BASE_URL=http://localhost:5001
-const API_BASE_URL = ((process.env.REACT_APP_API_BASE_URL ?? '')) + '/api';
+// API base resolution:
+// - If REACT_APP_API_BASE_URL is provided:
+//    - Append '/api' if it doesn't already include '/api' at the end
+//    - Preserve '/api' or '/.netlify/functions/api' if already present
+// - Otherwise, default to same-origin '/api' (Netlify redirect handles it in prod)
+const RAW_BASE = process.env.REACT_APP_API_BASE_URL?.replace(/\/$/, '') || '';
+const HAS_API_SEGMENT = /(^|\/)api(\b|\/)/.test(RAW_BASE);
+const API_BASE = RAW_BASE
+  ? (HAS_API_SEGMENT ? RAW_BASE : `${RAW_BASE}/api`)
+  : '/api';
 
 const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch }) => {
   const [filteredHairstyles, setFilteredHairstyles] = useState<Hairstyle[]>([]);
@@ -28,6 +35,8 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     search: ''
   });
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedSnapshot, setSelectedSnapshot] = useState<Hairstyle | null>(null);
   const isAdmin = React.useMemo(() => {
     try {
       return new URLSearchParams(window.location.search).get('admin') === '1';
@@ -39,6 +48,8 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   const pageSize = 24;
   const lastScrollYRef = useRef<number | null>(null);
   const lastAnchorIdRef = useRef<string | null>(null);
+  const latestFetchIdRef = useRef(0);
+  const [isCountHover, setIsCountHover] = useState(false);
   // Favorite IDs are stored locally in the browser
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => {
     try {
@@ -93,7 +104,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [headerSearch]);
 
-  // Pagination derived values
+  // Pagination derived values use the current filtered list
   const total = filteredHairstyles.length;
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total]);
   const clampedPage = Math.min(Math.max(page, 1), totalPages);
@@ -107,7 +118,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
 
   const fetchFilters = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/filters`);
+      const response = await fetch(`${API_BASE}/filters`);
       if (!response.ok) throw new Error('Failed to fetch filters');
       const data = await response.json();
       // Ensure compatibility if backend still returns categories
@@ -124,7 +135,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
 
   const updateEthnicity = async (id: string, ethnicity: string) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/hairstyles/${id}/ethnicity`, {
+      const res = await fetch(`${API_BASE}/hairstyles/${id}/ethnicity`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ethnicity })
@@ -145,6 +156,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   const fetchHairstyles = async () => {
     try {
       setLoading(true);
+      const myId = ++latestFetchIdRef.current;
       const queryParams = new URLSearchParams();
 
       Object.entries(activeFilters).forEach(([key, value]) => {
@@ -160,10 +172,12 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
         }
       });
 
-      const response = await fetch(`${API_BASE_URL}/hairstyles?${queryParams}`);
+      const response = await fetch(`${API_BASE}/hairstyles?${queryParams}`);
       if (!response.ok) throw new Error('Failed to fetch hairstyles');
       
       const data = await response.json();
+      // If a newer request has started, ignore this result
+      if (myId !== latestFetchIdRef.current) return;
       // Normalize any legacy pose values from backend to canonical 'Facing'
       const normalized = Array.isArray(data)
         ? data.map((h: any) => ({ ...h, pose: (h?.pose === 'Straight-on') ? 'Facing' : h?.pose }))
@@ -418,9 +432,29 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
           onMouseDown={(e) => { e.preventDefault(); }}
           onClick={(e) => { e.preventDefault(); clearFilters(); (e.currentTarget as HTMLButtonElement)?.blur?.(); }}
           title="Clear all filters"
-          className="text-gray-800 bg-gradient-to-tr from-blue-400/15 to-blue-900/12 rounded-full px-5 py-2.5 inline-flex items-center gap-2 shadow-md border border-gray-200 cursor-pointer transition-colors duration-150 hover:bg-blue-600 hover:text-white hover:border-blue-600 focus:bg-blue-600 focus:text-white focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+          className="text-gray-800 rounded-full px-5 py-2.5 inline-flex items-center gap-2 shadow-md border border-gray-200 cursor-pointer transition-colors transition-transform duration-150 hover:text-white hover:shadow-lg focus:text-white focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+          style={{
+            backgroundImage: isCountHover
+              ? 'none'
+              : 'repeating-linear-gradient(45deg, rgba(59,130,246,0.16) 0 10px, rgba(59,130,246,0.06) 10px 20px)',
+            backgroundColor: isCountHover ? '#2563eb' : 'white',
+            borderColor: isCountHover ? 'transparent' : undefined
+          }}
+          onMouseEnter={() => setIsCountHover(true)}
+          onMouseLeave={() => setIsCountHover(false)}
+          onFocus={() => setIsCountHover(true)}
+          onBlur={() => setIsCountHover(false)}
+          aria-busy={loading}
         >
-          {(() => {
+          {loading ? (
+            <span className="inline-flex items-center gap-2">
+              <svg className="animate-spin h-4 w-4 text-blue-500" viewBox="0 0 24 24" aria-hidden>
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              </svg>
+              <span>Updating…</span>
+            </span>
+          ) : (() => {
             const hasActive =
               activeFilters.length.length > 0 ||
               activeFilters.texture.length > 0 ||
@@ -429,9 +463,10 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
               activeFilters.pose.length > 0 ||
               activeFilters.ethnicity.length > 0 ||
               (activeFilters.search?.trim() ?? '') !== '';
+            const count = filteredHairstyles.length;
             return (
               <>
-                <span>{filteredHairstyles.length} classic cut{filteredHairstyles.length !== 1 ? 's' : ''}</span>
+                <span>{count} classic cut{count !== 1 ? 's' : ''}</span>
                 {hasActive && <span aria-hidden>•</span>}
                 {hasActive && <span className="font-semibold">Clear all</span>}
               </>
@@ -464,7 +499,11 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
                   hairstyle={hairstyle}
                   onClick={() => {
                     const idx = filteredHairstyles.findIndex(h => String(h.id) === String(hairstyle.id));
-                    if (idx >= 0) setSelectedIndex(idx);
+                    if (idx >= 0) {
+                      setSelectedIndex(idx);
+                      setSelectedId(String(hairstyle.id));
+                      setSelectedSnapshot(hairstyle);
+                    }
                   }}
                   onApplyFilter={onApplyFilter}
                   activeFilters={activeFilters}
@@ -502,24 +541,48 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       )}
 
       {/* Modal with carousel */}
-      {selectedIndex != null && filteredHairstyles[selectedIndex] && (
-        <HairstyleModal
-          hairstyle={filteredHairstyles[selectedIndex]}
-          onClose={() => setSelectedIndex(null)}
-          onPrev={() => setSelectedIndex((idx) => {
-            if (idx == null) return idx;
-            const n = filteredHairstyles.length;
-            return (idx - 1 + n) % n;
-          })}
-          onNext={() => setSelectedIndex((idx) => {
-            if (idx == null) return idx;
-            const n = filteredHairstyles.length;
-            return (idx + 1) % n;
-          })}
-          isFavorite={favoriteIds.has(String(filteredHairstyles[selectedIndex].id))}
-          onToggleFavorite={() => toggleFavorite(String(filteredHairstyles[selectedIndex].id))}
-          onApplyFilter={(type, value) => onApplyFilter(type, value)}
-        />
+      {selectedIndex != null && selectedId != null && (
+        (() => {
+          // Realign selectedIndex to the same ID when the list changes
+          const byIdIdx = filteredHairstyles.findIndex(h => String(h.id) === String(selectedId));
+          const currentIdx = byIdIdx >= 0 ? byIdIdx : selectedIndex;
+          const inList = byIdIdx >= 0;
+          const currentHs = inList
+            ? filteredHairstyles[currentIdx]
+            : (selectedSnapshot || filteredHairstyles[selectedIndex] || null);
+          if (!currentHs) return null;
+          const canNavigate = inList && filteredHairstyles.length > 0;
+          if (byIdIdx !== selectedIndex && byIdIdx >= 0) {
+            // Sync state if ID moved
+            setSelectedIndex(byIdIdx);
+          }
+          return (
+            <HairstyleModal
+              hairstyle={currentHs}
+              activeFilters={activeFilters}
+              onClose={() => { setSelectedIndex(null); setSelectedId(null); setSelectedSnapshot(null); }}
+              onPrev={canNavigate ? () => setSelectedIndex((idx) => {
+                if (idx == null) return idx;
+                const n = filteredHairstyles.length;
+                const next = (idx - 1 + n) % n;
+                const nextId = filteredHairstyles[next]?.id;
+                if (nextId != null) setSelectedId(String(nextId));
+                return next;
+              }) : undefined}
+              onNext={canNavigate ? () => setSelectedIndex((idx) => {
+                if (idx == null) return idx;
+                const n = filteredHairstyles.length;
+                const next = (idx + 1) % n;
+                const nextId = filteredHairstyles[next]?.id;
+                if (nextId != null) setSelectedId(String(nextId));
+                return next;
+              }) : undefined}
+              isFavorite={favoriteIds.has(String(currentHs.id))}
+              onToggleFavorite={() => toggleFavorite(String(currentHs.id))}
+              onApplyFilter={(type, value) => onApplyFilter(type, value)}
+            />
+          );
+        })()
       )}
     </div>
   );

@@ -22,35 +22,6 @@ interface HairstyleModalProps {
     ethnicity: string[];
     search?: string;
   };
-
-  // Build overflow items for faces/ethnicity like the card
-  const extraItemsAll = React.useMemo(() => {
-    const arr: string[] = [...(hairstyle.face_shapes || [])].filter(v => !isAny(v));
-    if (hairstyle.ethnicity && !isAny(hairstyle.ethnicity)) arr.push(`__ETH__:${hairstyle.ethnicity}`);
-    return arr;
-  }, [hairstyle.face_shapes, hairstyle.ethnicity]);
-
-  // Compute which extra items should be visible when collapsed: first two + any active hidden
-  const visibleExtraItems = React.useMemo(() => {
-    if (facesExpanded) return extraItemsAll;
-    const firstTwo = extraItemsAll.slice(0, 2);
-    const set = new Set(firstTwo);
-    // If an extra item is active, ensure it is visible even if beyond first two
-    const ensureVisible: string[] = [];
-    // Active face shapes
-    (hairstyle.face_shapes || []).forEach(shape => {
-      if (!isAny(shape) && isSelected('face_shape', shape)) {
-        const token = shape;
-        if (!set.has(token)) { set.add(token); ensureVisible.push(token); }
-      }
-    });
-    // Active ethnicity
-    if (hairstyle.ethnicity && !isAny(hairstyle.ethnicity) && isSelected('ethnicity', hairstyle.ethnicity)) {
-      const token = `__ETH__:${hairstyle.ethnicity}`;
-      if (!set.has(token)) { set.add(token); ensureVisible.push(token); }
-    }
-    return [...firstTwo, ...ensureVisible];
-  }, [facesExpanded, extraItemsAll, hairstyle.face_shapes, hairstyle.ethnicity, activeFilters]);
 }
 
 const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onPrev, onNext, isFavorite = false, onToggleFavorite, onApplyFilter, activeFilters }) => {
@@ -61,6 +32,12 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
   const touchStartYRef = useRef<number | null>(null);
   const touchMovedRef = useRef<boolean>(false);
   const [facesExpanded, setFacesExpanded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  // Reset image state when the hairstyle image changes
+  useEffect(() => {
+    setImageError(false);
+  }, [hairstyle?.image_url]);
 
   const anyFiltersActive = !!activeFilters && (
     (activeFilters.length?.length ?? 0) > 0 ||
@@ -110,6 +87,56 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
       ], { duration: 160, easing: 'ease-out' });
     } catch {}
   };
+
+  // Prevent double-click on pills from triggering favorite logic
+  const handlePillDoubleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  // Build overflow items for faces/ethnicity like the card
+  const extraItemsAll = React.useMemo<string[]>(() => {
+    const arr: string[] = [...(hairstyle.face_shapes || [])].filter((v: string) => !isAny(v));
+    if (hairstyle.ethnicity && !isAny(hairstyle.ethnicity)) arr.push(`__ETH__:${hairstyle.ethnicity}`);
+    return arr;
+  }, [hairstyle.face_shapes, hairstyle.ethnicity]);
+
+  // Compute which extra items should be visible when collapsed: first two + any active hidden
+  const visibleExtraItems = React.useMemo<string[]>(() => {
+    if (facesExpanded) return extraItemsAll;
+    const firstTwo = extraItemsAll.slice(0, 2);
+    const set = new Set(firstTwo);
+    // If an extra item is active, ensure it is visible even if beyond first two
+    const ensureVisible: string[] = [];
+    // Active face shapes
+    (hairstyle.face_shapes || []).forEach((shape: string) => {
+      if (!isAny(shape) && isSelected('face_shape', shape)) {
+        const token = shape;
+        if (!set.has(token)) { set.add(token); ensureVisible.push(token); }
+      }
+    });
+    // Active ethnicity
+    if (hairstyle.ethnicity && !isAny(hairstyle.ethnicity) && isSelected('ethnicity', hairstyle.ethnicity)) {
+      const token = `__ETH__:${hairstyle.ethnicity}`;
+      if (!set.has(token)) { set.add(token); ensureVisible.push(token); }
+    }
+    return [...firstTwo, ...ensureVisible];
+  }, [facesExpanded, extraItemsAll, hairstyle.face_shapes, hairstyle.ethnicity, activeFilters]);
+
+  // Auto-expand if an active extra item would otherwise be hidden
+  useEffect(() => {
+    if (facesExpanded) return;
+    const firstTwo = extraItemsAll.slice(0, 2);
+    const isActiveFaceHidden = (hairstyle.face_shapes || []).some((shape: string) => {
+      if (isAny(shape)) return false;
+      if (!isSelected('face_shape', shape)) return false;
+      return !firstTwo.includes(shape);
+    });
+    const isActiveEthHidden = !!(hairstyle.ethnicity && !isAny(hairstyle.ethnicity) && isSelected('ethnicity', hairstyle.ethnicity) && !firstTwo.includes(`__ETH__:${hairstyle.ethnicity}`));
+    if (isActiveFaceHidden || isActiveEthHidden) {
+      setFacesExpanded(true);
+    }
+  }, [facesExpanded, extraItemsAll, hairstyle.face_shapes, hairstyle.ethnicity, activeFilters]);
 
   // Keyboard navigation for convenience
   useEffect(() => {
@@ -169,7 +196,7 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
 
           {/* Image */}
           <div
-            className="relative bg-black"
+            className="relative bg-black h-[500px] md:h-[70vh] overflow-hidden flex items-center justify-center"
             onDoubleClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -210,14 +237,14 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
               touchMovedRef.current = false;
             }}
           >
+            {/* Image element always rendered to ensure next/prev loads fire */}
             <img
+              key={hairstyle.image_url}
               src={hairstyle.image_url}
               alt={hairstyle.name}
-              className="w-full max-h-[70vh] object-contain bg-black"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = 'https://via.placeholder.com/1200x800/111827/6b7280?text=No+Image';
-              }}
+              className={`max-w-full max-h-full w-auto h-full object-contain bg-black ${imageError ? 'opacity-0' : 'opacity-100'}`}
+              onError={() => { setImageError(true); }}
+              onLoad={() => { setImageError(false); }}
               draggable={false}
               onDoubleClick={(e) => {
                 e.preventDefault();
@@ -226,6 +253,20 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
                 onToggleFavorite?.();
               }}
             />
+
+            {/* Skeleton/placeholder overlay while loading or on error */}
+            {imageError && (
+              <div className="absolute inset-0 w-full h-full flex items-center justify-center select-none">
+                <div className="w-[400px] h-[500px] max-w-full max-h-full bg-gradient-to-br from-gray-800 to-gray-700 rounded-md flex items-center justify-center">
+                  <div className="flex flex-col items-center text-gray-300">
+                    <svg width="44" height="44" viewBox="0 0 24 24" fill="currentColor" className="opacity-80 mb-3">
+                      <path d="M21 19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2l1-2h8l1 2h2a2 2 0 0 1 2 2v11zM7 13l2.5 3.01L12 13l3 4H6l1-1z" />
+                    </svg>
+                    <span className="text-sm">Image unavailable</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Center heart pop animation (modal). Hidden by default via inline style. */}
             <div ref={popRef} className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ opacity: 0, visibility: 'hidden' }}>
@@ -284,6 +325,7 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
               {!isAny(hairstyle.length) && (
                 <span
                   onMouseDown={(e) => { e.preventDefault(); }}
+                  onDoubleClick={handlePillDoubleClick}
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('length', hairstyle.length); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
                   role="button"
                   tabIndex={0}
@@ -298,6 +340,7 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
               {!isAny(hairstyle.texture) && (
                 <span
                   onMouseDown={(e) => { e.preventDefault(); }}
+                  onDoubleClick={handlePillDoubleClick}
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('texture', hairstyle.texture); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
                   role="button"
                   tabIndex={0}
@@ -312,6 +355,7 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
               {!isAny(hairstyle.style_type) && (
                 <span
                   onMouseDown={(e) => { e.preventDefault(); }}
+                  onDoubleClick={handlePillDoubleClick}
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('style_type', hairstyle.style_type); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
                   role="button"
                   tabIndex={0}
@@ -326,6 +370,7 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
               {!isAny(hairstyle.pose) && hairstyle.pose && (
                 <span
                   onMouseDown={(e) => { e.preventDefault(); }}
+                  onDoubleClick={handlePillDoubleClick}
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter('pose', hairstyle.pose!); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
                   role="button"
                   tabIndex={0}
@@ -344,6 +389,7 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
                   <span
                     key={(isEth ? 'eth-' : 'face-') + val}
                     onMouseDown={(e) => { e.preventDefault(); }}
+                    onDoubleClick={handlePillDoubleClick}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); onApplyFilter && onApplyFilter(isEth ? 'ethnicity' : 'face_shape', val); animatePill(e.currentTarget); (e.currentTarget as HTMLElement)?.blur?.(); }}
                     role="button"
                     tabIndex={0}
@@ -358,6 +404,7 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
               {!facesExpanded && extraItemsAll.length > visibleExtraItems.length && (
                 <span
                   onMouseDown={(e) => { e.preventDefault(); }}
+                  onDoubleClick={handlePillDoubleClick}
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); setFacesExpanded(true); (e.currentTarget as HTMLElement)?.blur?.(); }}
                   role="button"
                   tabIndex={0}
