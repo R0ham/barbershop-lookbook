@@ -484,6 +484,19 @@ class Database {
     });
   }
 
+  updateImageUrl(id, image_url) {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        'UPDATE hairstyles SET image_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [image_url, id],
+        function (err) {
+          if (err) return reject(err);
+          resolve({ updated: this.changes > 0 });
+        }
+      );
+    });
+  }
+
   close() {
     this.db.close();
   }

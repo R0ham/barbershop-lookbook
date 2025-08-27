@@ -49,11 +49,11 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
     !!activeFilters.search
   );
 
-  const isSelected = (type: 'length' | 'texture' | 'style_type' | 'pose' | 'face_shape' | 'ethnicity', value: string) => {
+  const isSelected = React.useCallback((type: 'length' | 'texture' | 'style_type' | 'pose' | 'face_shape' | 'ethnicity', value: string) => {
     if (!activeFilters) return false;
     const list = (activeFilters as any)[type] as string[] | undefined;
     return Array.isArray(list) ? list.includes(value) : false;
-  };
+  }, [activeFilters]);
 
   const isAny = (v?: string) => typeof v === 'string' && v.trim().toLowerCase() === 'any';
 
@@ -121,7 +121,7 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
       if (!set.has(token)) { set.add(token); ensureVisible.push(token); }
     }
     return [...firstTwo, ...ensureVisible];
-  }, [facesExpanded, extraItemsAll, hairstyle.face_shapes, hairstyle.ethnicity, activeFilters]);
+  }, [facesExpanded, extraItemsAll, hairstyle.face_shapes, hairstyle.ethnicity, activeFilters, isSelected]);
 
   // Auto-expand if an active extra item would otherwise be hidden
   useEffect(() => {
@@ -136,7 +136,7 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
     if (isActiveFaceHidden || isActiveEthHidden) {
       setFacesExpanded(true);
     }
-  }, [facesExpanded, extraItemsAll, hairstyle.face_shapes, hairstyle.ethnicity, activeFilters]);
+  }, [facesExpanded, extraItemsAll, hairstyle.face_shapes, hairstyle.ethnicity, activeFilters, isSelected]);
 
   // Keyboard navigation for convenience
   useEffect(() => {
