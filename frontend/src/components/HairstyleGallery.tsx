@@ -147,6 +147,19 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       : uniqueFilteredHairstyles
   ), [favoritesOnly, uniqueFilteredHairstyles, favoriteIds]);
 
+  // Are there any active non-search filters?
+  const hasActiveFilters = useMemo(() => {
+    return (
+      activeFilters.length.length > 0 ||
+      activeFilters.texture.length > 0 ||
+      activeFilters.face_shape.length > 0 ||
+      activeFilters.style_type.length > 0 ||
+      activeFilters.pose.length > 0 ||
+      activeFilters.ethnicity.length > 0 ||
+      (activeFilters.search?.trim() ?? '') !== ''
+    );
+  }, [activeFilters]);
+
   // Pagination derived values use the view list
   const total = viewHairstyles.length;
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total]);
@@ -494,24 +507,13 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
         </button>
       </div>
 
-      {/* Results Count / Clear All */}
+      {/* Results Count / Clear All (blue themed) */}
       <div className="text-center mb-8">
         <button
           onMouseDown={(e) => { e.preventDefault(); }}
           onClick={(e) => { e.preventDefault(); clearFilters(); (e.currentTarget as HTMLButtonElement)?.blur?.(); }}
           title="Clear all filters"
-          className="text-gray-800 rounded-full px-5 py-2.5 inline-flex items-center gap-2 shadow-md border border-gray-200 cursor-pointer transition-colors transition-transform duration-150 hover:text-white hover:shadow-lg focus:text-white focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
-          style={{
-            backgroundImage: isCountHover
-              ? 'none'
-              : 'repeating-linear-gradient(45deg, rgba(59,130,246,0.16) 0 10px, rgba(59,130,246,0.06) 10px 20px)',
-            backgroundColor: isCountHover ? '#2563eb' : 'white',
-            borderColor: isCountHover ? 'transparent' : undefined
-          }}
-          onMouseEnter={() => setIsCountHover(true)}
-          onMouseLeave={() => setIsCountHover(false)}
-          onFocus={() => setIsCountHover(true)}
-          onBlur={() => setIsCountHover(false)}
+          className={`rounded-full px-5 py-2.5 inline-flex items-center gap-2 border-2 cursor-pointer transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${hasActiveFilters ? 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700' : 'bg-white text-blue-700 border-blue-400 hover:bg-blue-50'}`}
           aria-busy={loading}
         >
           {loading ? (
@@ -523,20 +525,12 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
               <span>Updating…</span>
             </span>
           ) : (() => {
-            const hasActive =
-              activeFilters.length.length > 0 ||
-              activeFilters.texture.length > 0 ||
-              activeFilters.face_shape.length > 0 ||
-              activeFilters.style_type.length > 0 ||
-              activeFilters.pose.length > 0 ||
-              activeFilters.ethnicity.length > 0 ||
-              (activeFilters.search?.trim() ?? '') !== '';
             const count = viewHairstyles.length;
             return (
               <>
                 <span>{count} classic cut{count !== 1 ? 's' : ''}</span>
-                {hasActive && <span aria-hidden>•</span>}
-                {hasActive && <span className="font-semibold">Clear all</span>}
+                {hasActiveFilters && <span aria-hidden>•</span>}
+                {hasActiveFilters && <span className="font-semibold">Clear all</span>}
               </>
             );
           })()}
