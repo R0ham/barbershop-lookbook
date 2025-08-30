@@ -118,6 +118,15 @@ Routing and build settings are defined in the root `netlify.toml`:
 
 The frontend uses same-origin `/api/*` in production. Do not set `REACT_APP_API_BASE_URL` in Netlify unless you intend to call an external API origin.
 
+### Production data (Neon/Postgres)
+- The production API runs in `netlify/functions/api.js` and connects to Neon using the `DATABASE_URL` environment variable.
+- On first invocation of a new function instance, `init()` will:
+  - Create the `hairstyles` table if it does not exist.
+  - Seed a small set of sample rows only if the table is empty.
+- Endpoints implemented in the function:
+  - `GET /api/filters`, `GET /api/hairstyles`, `GET /api/hairstyles/:id` and `PUT /api/hairstyles/:id/ethnicity`.
+  - Note: a create endpoint is not exposed in the Netlify function (creation is available only in local dev via SQLite `POST /api/hairstyles`).
+
 ## Contributing
 
 1. Fork the repository
