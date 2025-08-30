@@ -121,7 +121,7 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
       if (!set.has(token)) { set.add(token); ensureVisible.push(token); }
     }
     return [...firstTwo, ...ensureVisible];
-  }, [facesExpanded, extraItemsAll, hairstyle.face_shapes, hairstyle.ethnicity, activeFilters, isSelected]);
+  }, [facesExpanded, extraItemsAll, hairstyle.face_shapes, hairstyle.ethnicity, isSelected]);
 
   // Auto-expand if an active extra item would otherwise be hidden
   useEffect(() => {
@@ -136,7 +136,7 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
     if (isActiveFaceHidden || isActiveEthHidden) {
       setFacesExpanded(true);
     }
-  }, [facesExpanded, extraItemsAll, hairstyle.face_shapes, hairstyle.ethnicity, activeFilters, isSelected]);
+  }, [facesExpanded, extraItemsAll, hairstyle.face_shapes, hairstyle.ethnicity, isSelected]);
 
   // Keyboard navigation for convenience
   useEffect(() => {
