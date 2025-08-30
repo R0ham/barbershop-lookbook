@@ -294,11 +294,11 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
                   <>
                     <span>Photo on </span>
                     <a
-                      href={hairstyle.artist_url}
+                      href={hairstyle.image_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => { e.stopPropagation(); }}
-                      className="underline decoration-1 underline-offset-2 hover:text-white"
+                      className="link-solid-underline hover:text-white"
                       title="Open Unsplash"
                     >
                       Unsplash
@@ -312,7 +312,7 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => { e.stopPropagation(); }}
-                      className="underline decoration-1 underline-offset-2 hover:text-white"
+                      className="link-solid-underline hover:text-white"
                     >
                       {hairstyle.artist_name}
                     </a>
@@ -322,8 +322,8 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={(e) => { e.stopPropagation(); }}
-                      className="underline decoration-1 underline-offset-2 hover:text-white"
-                      title="Open on Unsplash"
+                      className="link-solid-underline hover:text-white"
+                      title="Open Unsplash"
                     >
                       Unsplash
                     </a>

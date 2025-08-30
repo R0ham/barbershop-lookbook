@@ -330,50 +330,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
                   </svg>
                 </div>
 
-                {/* Attribution caption */}
-                {(hairstyle.artist_name && hairstyle.artist_url) ? (
-                  <div className="absolute left-2 bottom-2 z-10 text-[12px] md:text-[13px] text-gray-500/90 select-none">
-                    {hairstyle.artist_name === 'Unknown' ? (
-                      <>
-                        <span>Photo on </span>
-                        <a
-                          href={hairstyle.artist_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => { e.stopPropagation(); }}
-                          className="underline decoration-1 underline-offset-2 hover:text-gray-700"
-                          title="Open Unsplash"
-                        >
-                          Unsplash
-                        </a>
-                      </>
-                    ) : (
-                      <>
-                        <span>Photo by </span>
-                        <a
-                          href={hairstyle.artist_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => { e.stopPropagation(); }}
-                          className="underline decoration-1 underline-offset-2 hover:text-gray-700"
-                        >
-                          {hairstyle.artist_name}
-                        </a>
-                        <span> on </span>
-                        <a
-                          href={hairstyle.image_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => { e.stopPropagation(); }}
-                          className="underline decoration-1 underline-offset-2 hover:text-gray-700"
-                          title="Open on Unsplash"
-                        >
-                          Unsplash
-                        </a>
-                      </>
-                    )}
-                  </div>
-                ) : null}
+                {/* (moved) attribution now rendered below in the paper sheet */}
               </>
             ) : (
               <div className="relative w-[300px] h-[500px] md:h-[40vh] overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 rounded-md animate-pulse flex items-center justify-center select-none mx-auto">
@@ -405,7 +362,50 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
             </div>
           )}
         </div>
-        {/* Description */}
+        {/* Attribution below image, inside card whitespace */}
+        {(hairstyle.artist_name && hairstyle.artist_url) && (
+          <div className="px-4 md:px-5 -mt-2 mb-4 text-right text-[12px] md:text-[13px] text-gray-500/90 select-none photo-attrib">
+            {hairstyle.artist_name === 'Unknown' ? (
+              <>
+                <span>Photo from </span>
+                <a
+                  href={hairstyle.image_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => { e.stopPropagation(); }}
+                  className="link-solid-underline hover:text-gray-700"
+                  title="Open on Unsplash"
+                >
+                  Unsplash
+                </a>
+              </>
+            ) : (
+              <>
+                <span>Photo by </span>
+                <a
+                  href={hairstyle.artist_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => { e.stopPropagation(); }}
+                  className="link-solid-underline hover:text-gray-700"
+                >
+                  {hairstyle.artist_name}
+                </a>
+                <span> on </span>
+                <a
+                  href={hairstyle.image_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => { e.stopPropagation(); }}
+                  className="link-solid-underline hover:text-gray-700"
+                  title="Open on Unsplash"
+                >
+                  Unsplash
+                </a>
+              </>
+            )}
+          </div>
+        )}
         <div className="paper-sheet p-4 md:p-5">
           <p className="text-gray-600 text-sm mb-4 leading-6 line-clamp-2 select-none">{hairstyle.description}</p>
           <div className="flex flex-wrap gap-2 mb-3">
