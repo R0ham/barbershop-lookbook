@@ -56,11 +56,12 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const pageSize = 24;
+  const pageSize = 100;
   const lastScrollYRef = useRef<number | null>(null);
   const lastAnchorIdRef = useRef<string | null>(null);
   const latestFetchIdRef = useRef(0);
   const [isCountHover, setIsCountHover] = useState(false);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   // Favorite IDs are stored locally in the browser
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => {
     try {
@@ -115,8 +116,39 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [headerSearch]);
 
-  // Pagination derived values use the current filtered list
-  const total = uniqueFilteredHairstyles.length;
+  // Initialize favoritesOnly from URL (?fav=1 or true)
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const favParam = sp.get('fav');
+      if (favParam && (favParam === '1' || favParam.toLowerCase() === 'true')) {
+        setFavoritesOnly(true);
+      }
+    } catch {}
+  }, []);
+
+  // Persist favoritesOnly to URL (replaceState, keep other params)
+  useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      if (favoritesOnly) {
+        url.searchParams.set('fav', '1');
+      } else {
+        url.searchParams.delete('fav');
+      }
+      window.history.replaceState({}, '', url.toString());
+    } catch {}
+  }, [favoritesOnly]);
+
+  // Optionally filter current list down to favorites only
+  const viewHairstyles = useMemo(() => (
+    favoritesOnly
+      ? uniqueFilteredHairstyles.filter(h => favoriteIds.has(String(h.id)))
+      : uniqueFilteredHairstyles
+  ), [favoritesOnly, uniqueFilteredHairstyles, favoriteIds]);
+
+  // Pagination derived values use the view list
+  const total = viewHairstyles.length;
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total]);
   const clampedPage = Math.min(Math.max(page, 1), totalPages);
   useEffect(() => {
@@ -125,7 +157,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   }, [clampedPage]);
   const start = (clampedPage - 1) * pageSize;
   const end = Math.min(start + pageSize, total);
-  const pageItems = useMemo(() => uniqueFilteredHairstyles.slice(start, end), [uniqueFilteredHairstyles, start, end]);
+  const pageItems = useMemo(() => viewHairstyles.slice(start, end), [viewHairstyles, start, end]);
 
   const fetchFilters = async () => {
     try {
@@ -437,6 +469,31 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
         />
       </div>
 
+      {/* Favorites filter toggle under filters, aligned right */}
+      <div className="flex justify-end -mt-6 mb-6 px-1">
+        <button
+          onMouseDown={(e) => { e.preventDefault(); }}
+          onClick={(e) => { e.preventDefault(); setFavoritesOnly(v => !v); (e.currentTarget as HTMLButtonElement)?.blur?.(); setPage(1); }}
+          className={`px-4 py-2 rounded-full border transition-colors text-sm font-medium inline-flex items-center gap-2 ${favoritesOnly ? 'bg-red-600 text-white border-red-600 hover:bg-red-700' : 'bg-white text-red-600 border-red-300 hover:bg-red-50'}`}
+          title={favoritesOnly ? 'Show all results' : 'Show favorites only'}
+          aria-pressed={favoritesOnly}
+        >
+          {/* Heart icon */}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            className="w-4 h-4"
+            aria-hidden
+            fill={favoritesOnly ? 'currentColor' : 'none'}
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.016-4.5-4.5-4.5-1.74 0-3.243.99-4 2.43-.757-1.44-2.26-2.43-4-2.43C6.016 3.75 4 5.765 4 8.25c0 7.22 8.5 12 8.5 12s8.5-4.78 8.5-12z" />
+          </svg>
+          <span>{favoritesOnly ? 'Favorites only' : 'Favorites only'}</span>
+        </button>
+      </div>
+
       {/* Results Count / Clear All */}
       <div className="text-center mb-8">
         <button
@@ -474,7 +531,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
               activeFilters.pose.length > 0 ||
               activeFilters.ethnicity.length > 0 ||
               (activeFilters.search?.trim() ?? '') !== '';
-            const count = filteredHairstyles.length;
+            const count = viewHairstyles.length;
             return (
               <>
                 <span>{count} classic cut{count !== 1 ? 's' : ''}</span>
@@ -509,7 +566,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
                   key={hairstyle.id}
                   hairstyle={hairstyle}
                   onClick={() => {
-                    const idx = uniqueFilteredHairstyles.findIndex(h => String(h.id) === String(hairstyle.id));
+                    const idx = viewHairstyles.findIndex(h => String(h.id) === String(hairstyle.id));
                     if (idx >= 0) {
                       setSelectedIndex(idx);
                       setSelectedId(String(hairstyle.id));
@@ -554,15 +611,15 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       {/* Modal with carousel */}
       {selectedIndex != null && selectedId != null && (
         (() => {
-          // Realign selectedIndex to the same ID when the list changes
-          const byIdIdx = uniqueFilteredHairstyles.findIndex(h => String(h.id) === String(selectedId));
+          // Realign selectedIndex to the same ID when the view list changes
+          const byIdIdx = viewHairstyles.findIndex(h => String(h.id) === String(selectedId));
           const currentIdx = byIdIdx >= 0 ? byIdIdx : selectedIndex;
           const inList = byIdIdx >= 0;
           const currentHs = inList
-            ? uniqueFilteredHairstyles[currentIdx]
-            : (selectedSnapshot || uniqueFilteredHairstyles[selectedIndex] || null);
+            ? viewHairstyles[currentIdx]
+            : (selectedSnapshot || viewHairstyles[selectedIndex] || null);
           if (!currentHs) return null;
-          const canNavigate = inList && uniqueFilteredHairstyles.length > 0;
+          const canNavigate = inList && viewHairstyles.length > 0;
           if (byIdIdx !== selectedIndex && byIdIdx >= 0) {
             // Sync state if ID moved
             setSelectedIndex(byIdIdx);
@@ -574,17 +631,17 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
               onClose={() => { setSelectedIndex(null); setSelectedId(null); setSelectedSnapshot(null); }}
               onPrev={canNavigate ? () => setSelectedIndex((idx) => {
                 if (idx == null) return idx;
-                const n = uniqueFilteredHairstyles.length;
+                const n = viewHairstyles.length;
                 const next = (idx - 1 + n) % n;
-                const nextId = uniqueFilteredHairstyles[next]?.id;
+                const nextId = viewHairstyles[next]?.id;
                 if (nextId != null) setSelectedId(String(nextId));
                 return next;
               }) : undefined}
               onNext={canNavigate ? () => setSelectedIndex((idx) => {
                 if (idx == null) return idx;
-                const n = uniqueFilteredHairstyles.length;
+                const n = viewHairstyles.length;
                 const next = (idx + 1) % n;
-                const nextId = uniqueFilteredHairstyles[next]?.id;
+                const nextId = viewHairstyles[next]?.id;
                 if (nextId != null) setSelectedId(String(nextId));
                 return next;
               }) : undefined}
