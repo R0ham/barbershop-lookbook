@@ -473,7 +473,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   return (
     <div className="flex flex-col gap-6">
       {/* Filters Card (search moved to header in App) */}
-      <div className="paper-card perforated-left p-6 mb-8">
+      <div className="paper-card perforated-left p-6 mb-6">
         <FilterPanel
           filters={filters}
           activeFilters={activeFilters}
@@ -511,8 +511,8 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       <div className="text-center mb-8">
         <button
           onMouseDown={(e) => { e.preventDefault(); }}
-          onClick={(e) => { e.preventDefault(); clearFilters(); (e.currentTarget as HTMLButtonElement)?.blur?.(); }}
-          title="Clear all filters"
+          onClick={(e) => { e.preventDefault(); setFavoritesOnly(false); clearFilters(); setPage(1); (e.currentTarget as HTMLButtonElement)?.blur?.(); }}
+          title="Clear favorites and all filters"
           className={`rounded-full px-5 py-2.5 inline-flex items-center gap-2 border-2 cursor-pointer transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${hasActiveFilters ? 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700' : 'bg-white text-blue-700 border-blue-400 hover:bg-blue-50'}`}
           aria-busy={loading}
         >
