@@ -240,10 +240,21 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
             {/* Image element always rendered to ensure next/prev loads fire */}
             <img
               key={hairstyle.image_url}
-              src={hairstyle.image_url}
+              src={/^https?:\/\/source\.unsplash\.com\//.test(String(hairstyle.image_url))
+                ? `/api/proxy-image?url=${encodeURIComponent(String(hairstyle.image_url))}`
+                : hairstyle.image_url}
               alt={hairstyle.name}
               className={`max-w-full max-h-full w-auto h-full object-contain bg-black ${imageError ? 'opacity-0' : 'opacity-100'}`}
-              onError={() => { setImageError(true); }}
+              onError={(e) => {
+                try {
+                  const img = e.currentTarget as HTMLImageElement;
+                  if (img && !/(\/api|\.netlify\/functions\/api)\/proxy-image/.test(img.src)) {
+                    img.src = `/api/proxy-image?url=${encodeURIComponent(hairstyle.image_url)}`;
+                    return;
+                  }
+                } catch {}
+                setImageError(true);
+              }}
               onLoad={() => { setImageError(false); }}
               draggable={false}
               onDoubleClick={(e) => {

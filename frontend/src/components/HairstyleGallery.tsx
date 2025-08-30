@@ -17,6 +17,17 @@ const API_BASE = RAW_BASE
 
 const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch }) => {
   const [filteredHairstyles, setFilteredHairstyles] = useState<Hairstyle[]>([]);
+  // Client-side dedupe: hide repeated images (same image_url) in the current list
+  const uniqueFilteredHairstyles = useMemo(() => {
+    const seen = new Set<string>();
+    return filteredHairstyles.filter(h => {
+      const key = String((h as any)?.image_url || '');
+      if (!key) return true;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [filteredHairstyles]);
   const [filters, setFilters] = useState<Filters>({
     lengths: [],
     textures: [],
@@ -105,7 +116,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   }, [headerSearch]);
 
   // Pagination derived values use the current filtered list
-  const total = filteredHairstyles.length;
+  const total = uniqueFilteredHairstyles.length;
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / pageSize)), [total]);
   const clampedPage = Math.min(Math.max(page, 1), totalPages);
   useEffect(() => {
@@ -114,7 +125,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   }, [clampedPage]);
   const start = (clampedPage - 1) * pageSize;
   const end = Math.min(start + pageSize, total);
-  const pageItems = useMemo(() => filteredHairstyles.slice(start, end), [filteredHairstyles, start, end]);
+  const pageItems = useMemo(() => uniqueFilteredHairstyles.slice(start, end), [uniqueFilteredHairstyles, start, end]);
 
   const fetchFilters = async () => {
     try {
@@ -498,7 +509,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
                   key={hairstyle.id}
                   hairstyle={hairstyle}
                   onClick={() => {
-                    const idx = filteredHairstyles.findIndex(h => String(h.id) === String(hairstyle.id));
+                    const idx = uniqueFilteredHairstyles.findIndex(h => String(h.id) === String(hairstyle.id));
                     if (idx >= 0) {
                       setSelectedIndex(idx);
                       setSelectedId(String(hairstyle.id));
@@ -544,14 +555,14 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       {selectedIndex != null && selectedId != null && (
         (() => {
           // Realign selectedIndex to the same ID when the list changes
-          const byIdIdx = filteredHairstyles.findIndex(h => String(h.id) === String(selectedId));
+          const byIdIdx = uniqueFilteredHairstyles.findIndex(h => String(h.id) === String(selectedId));
           const currentIdx = byIdIdx >= 0 ? byIdIdx : selectedIndex;
           const inList = byIdIdx >= 0;
           const currentHs = inList
-            ? filteredHairstyles[currentIdx]
-            : (selectedSnapshot || filteredHairstyles[selectedIndex] || null);
+            ? uniqueFilteredHairstyles[currentIdx]
+            : (selectedSnapshot || uniqueFilteredHairstyles[selectedIndex] || null);
           if (!currentHs) return null;
-          const canNavigate = inList && filteredHairstyles.length > 0;
+          const canNavigate = inList && uniqueFilteredHairstyles.length > 0;
           if (byIdIdx !== selectedIndex && byIdIdx >= 0) {
             // Sync state if ID moved
             setSelectedIndex(byIdIdx);
@@ -563,17 +574,17 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
               onClose={() => { setSelectedIndex(null); setSelectedId(null); setSelectedSnapshot(null); }}
               onPrev={canNavigate ? () => setSelectedIndex((idx) => {
                 if (idx == null) return idx;
-                const n = filteredHairstyles.length;
+                const n = uniqueFilteredHairstyles.length;
                 const next = (idx - 1 + n) % n;
-                const nextId = filteredHairstyles[next]?.id;
+                const nextId = uniqueFilteredHairstyles[next]?.id;
                 if (nextId != null) setSelectedId(String(nextId));
                 return next;
               }) : undefined}
               onNext={canNavigate ? () => setSelectedIndex((idx) => {
                 if (idx == null) return idx;
-                const n = filteredHairstyles.length;
+                const n = uniqueFilteredHairstyles.length;
                 const next = (idx + 1) % n;
-                const nextId = filteredHairstyles[next]?.id;
+                const nextId = uniqueFilteredHairstyles[next]?.id;
                 if (nextId != null) setSelectedId(String(nextId));
                 return next;
               }) : undefined}

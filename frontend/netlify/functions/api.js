@@ -190,15 +190,55 @@ async function handleUpdateEthnicity(id, body) {
 }
 
 exports.handler = async (event) => {
-  if (!process.env.DATABASE_URL) {
-    return json(null, 500, { error: 'DATABASE_URL not configured' });
-  }
-  await init();
-
   const method = event.httpMethod;
   const path = event.path || '';
   const base = '/.netlify/functions/api';
   const rel = path.startsWith(base) ? path.slice(base.length) : path;
+
+  // Allow the proxy endpoint to run without database configuration
+  if (method === 'GET' && (rel === '/proxy-image' || rel === '/api/proxy-image')) {
+    try {
+      const qs = parseQueryString(event.rawQuery || event.queryStringParameters);
+      const target = qs.url;
+      if (!target) return { statusCode: 400, body: 'Missing url' };
+      let u;
+      try { u = new URL(target); } catch { return { statusCode: 400, body: 'Invalid url' }; }
+      const allowed = new Set(['images.unsplash.com', 'source.unsplash.com']);
+      if (!allowed.has(u.hostname)) {
+        return { statusCode: 400, body: 'Disallowed host' };
+      }
+      const res = await fetch(u.toString(), {
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+          'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+          'Referer': 'https://unsplash.com/'
+        },
+        redirect: 'follow'
+      });
+      if (!res.ok) {
+        return { statusCode: res.status, body: 'Upstream error' };
+      }
+      const buf = Buffer.from(await res.arrayBuffer());
+      const contentType = res.headers.get('content-type') || 'image/jpeg';
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': contentType,
+          'Cache-Control': 'public, max-age=86400',
+        },
+        body: buf.toString('base64'),
+        isBase64Encoded: true,
+      };
+    } catch (e) {
+      console.error('proxy-image error', e);
+      return { statusCode: 500, body: 'Proxy error' };
+    }
+  }
+
+  if (!process.env.DATABASE_URL) {
+    return json(null, 500, { error: 'DATABASE_URL not configured' });
+  }
+  await init();
 
   try {
     if (method === 'GET' && (rel === '/filters' || rel === '/api/filters')) {

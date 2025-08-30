@@ -37,6 +37,7 @@ class Database {
           console.error('Error reading table info:', err);
         } else {
           const hasEth = rows.some(r => r.name === 'ethnicity');
+          const hasUnsplashId = rows.some(r => r.name === 'unsplash_photo_id');
           const ensureIndexes = () => {
             // Create indexes for better query performance (run after ensuring columns)
             this.db.run(`CREATE INDEX IF NOT EXISTS idx_category ON hairstyles(category)`);
@@ -45,6 +46,7 @@ class Database {
             this.db.run(`CREATE INDEX IF NOT EXISTS idx_style_type ON hairstyles(style_type)`);
             this.db.run(`CREATE INDEX IF NOT EXISTS idx_pose ON hairstyles(pose)`);
             this.db.run(`CREATE INDEX IF NOT EXISTS idx_ethnicity ON hairstyles(ethnicity)`);
+            this.db.run(`CREATE INDEX IF NOT EXISTS idx_unsplash_photo_id ON hairstyles(unsplash_photo_id)`);
           };
 
           const runPostMigration = () => {
@@ -79,16 +81,24 @@ class Database {
             });
           };
 
-          if (!hasEth) {
-            this.db.run(`ALTER TABLE hairstyles ADD COLUMN ethnicity TEXT`, (e) => {
-              if (e) console.warn('ALTER TABLE add ethnicity failed (may already exist):', e.message);
-              ensureIndexes();
-              runPostMigration();
-            });
-          } else {
-            ensureIndexes();
-            runPostMigration();
-          }
+          const afterAlters = () => { ensureIndexes(); runPostMigration(); };
+          const doEth = (next) => {
+            if (!hasEth) {
+              this.db.run(`ALTER TABLE hairstyles ADD COLUMN ethnicity TEXT`, (e) => {
+                if (e) console.warn('ALTER TABLE add ethnicity failed (may already exist):', e.message);
+                next();
+              });
+            } else next();
+          };
+          const doUnsplash = (next) => {
+            if (!hasUnsplashId) {
+              this.db.run(`ALTER TABLE hairstyles ADD COLUMN unsplash_photo_id TEXT`, (e) => {
+                if (e) console.warn('ALTER TABLE add unsplash_photo_id failed (may already exist):', e.message);
+                next();
+              });
+            } else next();
+          };
+          doEth(() => doUnsplash(afterAlters));
         }
       });
     });
@@ -489,6 +499,19 @@ class Database {
       this.db.run(
         'UPDATE hairstyles SET image_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
         [image_url, id],
+        function (err) {
+          if (err) return reject(err);
+          resolve({ updated: this.changes > 0 });
+        }
+      );
+    });
+  }
+
+  updateImageAndUnsplashId(id, image_url, unsplash_photo_id) {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        'UPDATE hairstyles SET image_url = ?, unsplash_photo_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [image_url, unsplash_photo_id || null, id],
         function (err) {
           if (err) return reject(err);
           resolve({ updated: this.changes > 0 });
