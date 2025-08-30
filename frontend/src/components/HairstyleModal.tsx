@@ -292,7 +292,7 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
               <div className="absolute left-3 bottom-3 z-10 text-[12px] md:text-[13px] text-gray-200/95 select-none">
                 {hairstyle.artist_name === 'Unknown' ? (
                   <>
-                    <span>Photo on </span>
+                    <span>Photo from </span>
                     <a
                       href={hairstyle.image_url}
                       target="_blank"
