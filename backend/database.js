@@ -23,6 +23,8 @@ class Database {
           pose TEXT DEFAULT 'Straight-on',
           ethnicity TEXT,
           image_url TEXT NOT NULL,
+          artist_name TEXT,
+          artist_url TEXT,
           image_data BLOB,
           description TEXT,
           tags TEXT,
@@ -38,6 +40,8 @@ class Database {
         } else {
           const hasEth = rows.some(r => r.name === 'ethnicity');
           const hasUnsplashId = rows.some(r => r.name === 'unsplash_photo_id');
+          const hasArtistName = rows.some(r => r.name === 'artist_name');
+          const hasArtistUrl = rows.some(r => r.name === 'artist_url');
           const ensureIndexes = () => {
             // Create indexes for better query performance (run after ensuring columns)
             this.db.run(`CREATE INDEX IF NOT EXISTS idx_category ON hairstyles(category)`);
@@ -98,7 +102,23 @@ class Database {
               });
             } else next();
           };
-          doEth(() => doUnsplash(afterAlters));
+          const doArtistName = (next) => {
+            if (!hasArtistName) {
+              this.db.run(`ALTER TABLE hairstyles ADD COLUMN artist_name TEXT`, (e) => {
+                if (e) console.warn('ALTER TABLE add artist_name failed (may already exist):', e.message);
+                next();
+              });
+            } else next();
+          };
+          const doArtistUrl = (next) => {
+            if (!hasArtistUrl) {
+              this.db.run(`ALTER TABLE hairstyles ADD COLUMN artist_url TEXT`, (e) => {
+                if (e) console.warn('ALTER TABLE add artist_url failed (may already exist):', e.message);
+                next();
+              });
+            } else next();
+          };
+          doEth(() => doUnsplash(() => doArtistName(() => doArtistUrl(afterAlters))));
         }
       });
     });

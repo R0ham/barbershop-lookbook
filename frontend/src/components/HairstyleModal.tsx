@@ -196,7 +196,7 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
 
           {/* Image */}
           <div
-            className="relative bg-black h-[500px] md:h-[70vh] overflow-hidden flex items-center justify-center"
+            className="relative bg-black h-[500px] md:h-[70vh] overflow-hidden flex items-center justify-center select-none"
             onDoubleClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -245,6 +245,7 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
                 : hairstyle.image_url}
               alt={hairstyle.name}
               className={`max-w-full max-h-full w-auto h-full object-contain bg-black ${imageError ? 'opacity-0' : 'opacity-100'}`}
+              onMouseDown={(e) => { e.preventDefault(); }}
               onError={(e) => {
                 try {
                   const img = e.currentTarget as HTMLImageElement;
@@ -285,6 +286,51 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
               </svg>
             </div>
+
+            {/* Attribution caption */}
+            {(hairstyle.artist_name && hairstyle.artist_url) ? (
+              <div className="absolute left-3 bottom-3 z-10 text-[12px] md:text-[13px] text-gray-200/95 select-none">
+                {hairstyle.artist_name === 'Unknown' ? (
+                  <>
+                    <span>Photo on </span>
+                    <a
+                      href={hairstyle.artist_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => { e.stopPropagation(); }}
+                      className="underline decoration-1 underline-offset-2 hover:text-white"
+                      title="Open Unsplash"
+                    >
+                      Unsplash
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    <span>Photo by </span>
+                    <a
+                      href={hairstyle.artist_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => { e.stopPropagation(); }}
+                      className="underline decoration-1 underline-offset-2 hover:text-white"
+                    >
+                      {hairstyle.artist_name}
+                    </a>
+                    <span> on </span>
+                    <a
+                      href={hairstyle.image_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => { e.stopPropagation(); }}
+                      className="underline decoration-1 underline-offset-2 hover:text-white"
+                      title="Open on Unsplash"
+                    >
+                      Unsplash
+                    </a>
+                  </>
+                )}
+              </div>
+            ) : null}
 
             {/* Bottom-right favorite button (only in modal) */}
             <button

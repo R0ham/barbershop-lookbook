@@ -24,6 +24,9 @@ async function init() {
         pose TEXT DEFAULT 'Straight-on',
         ethnicity TEXT,
         image_url TEXT NOT NULL,
+        artist_name TEXT,
+        artist_url TEXT,
+        unsplash_photo_id TEXT,
         description TEXT,
         tags JSONB,
         created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -35,6 +38,10 @@ async function init() {
       CREATE INDEX IF NOT EXISTS idx_hairstyles_style_type ON hairstyles(style_type);
       CREATE INDEX IF NOT EXISTS idx_hairstyles_pose ON hairstyles(pose);
       CREATE INDEX IF NOT EXISTS idx_hairstyles_ethnicity ON hairstyles(ethnicity);
+      CREATE INDEX IF NOT EXISTS idx_hairstyles_unsplash_photo_id ON hairstyles(unsplash_photo_id);
+      -- Safe migrations for existing tables
+      ALTER TABLE hairstyles ADD COLUMN IF NOT EXISTS artist_name TEXT;
+      ALTER TABLE hairstyles ADD COLUMN IF NOT EXISTS artist_url TEXT;
     `);
 
     // Backfill/seed

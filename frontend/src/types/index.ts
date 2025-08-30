@@ -8,6 +8,9 @@ export interface Hairstyle {
   pose: string;
   ethnicity?: string;
   image_url: string;
+  artist_name?: string;
+  artist_url?: string;
+  unsplash_photo_id?: string;
   image_data?: Buffer;
   description: string;
   tags: string[];
