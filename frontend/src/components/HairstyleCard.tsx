@@ -272,7 +272,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
         {/* Image */}
         <div className="photo-frame">
           <div
-            className="photo-image-wrap select-none"
+            className="photo-image-wrap select-none polaroid-grain"
             onDoubleClick={(e) => {
               // Double-clicking the image toggles favorite and should not open the modal
               e.preventDefault();
@@ -291,7 +291,7 @@ const HairstyleCard: React.FC<HairstyleCardProps> = ({ hairstyle, onClick, onApp
             {imageLoaded ? (
               <>
                 <img
-                  className="hs-card-img w-full object-cover object-center select-none"
+                  className="hs-card-img w-full object-cover object-center select-none polaroid-filter"
                   src={hairstyle.image_url}
                   alt={hairstyle.name}
                   loading="lazy"

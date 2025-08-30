@@ -196,7 +196,7 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
 
           {/* Image */}
           <div
-            className="relative bg-black h-[500px] md:h-[70vh] overflow-hidden flex items-center justify-center select-none"
+            className="relative bg-black h-[500px] md:h-[70vh] overflow-hidden flex items-center justify-center select-none polaroid-grain"
             onDoubleClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -244,7 +244,7 @@ const HairstyleModal: React.FC<HairstyleModalProps> = ({ hairstyle, onClose, onP
                 ? `/api/proxy-image?url=${encodeURIComponent(String(hairstyle.image_url))}`
                 : hairstyle.image_url}
               alt={hairstyle.name}
-              className={`max-w-full max-h-full w-auto h-full object-contain bg-black ${imageError ? 'opacity-0' : 'opacity-100'}`}
+              className={`max-w-full max-h-full w-auto h-full object-contain bg-black polaroid-filter ${imageError ? 'opacity-0' : 'opacity-100'}`}
               onMouseDown={(e) => { e.preventDefault(); }}
               onError={(e) => {
                 try {
