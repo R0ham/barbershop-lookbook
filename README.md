@@ -1,4 +1,4 @@
-# Hair Style Gallery
+# Barbershop Lookbook
 
 Built with the Windsurf IDE using these models: GPT-5, Sonnet 4, SWE-1.
 This is a fully agentic AI implementation, with me (the human) supplying only creative vision and occassional debugging.
