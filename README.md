@@ -1,6 +1,11 @@
 # Hair Style Gallery
 
-A modern web application built with React, Tailwind CSS, and Node.js to help users discover and explore hundreds of hairstyles to find their perfect look.
+Built using the Windsurf IDE with these models: GPT-5, Sonnet 4, SWE-1.
+Fully agentic AI implementation, with me (the human) supplying only creative vision and occassional debugging.
+
+## Description
+
+A modern web application built on React, Tailwind CSS, and Node.js to help users discover and explore hairstyles to find their perfect look.
 
 ## Features
 
