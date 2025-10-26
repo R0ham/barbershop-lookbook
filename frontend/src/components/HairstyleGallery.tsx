@@ -315,7 +315,54 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     };
   }, [draggingSlot, emojiOptions.length]);
 
-  // Update URL and localStorage when emojiIdx changes
+  // 1. Handle initial load from URL - only runs once on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const userParam = params.get('user');
+    
+    if (userParam) {
+      const emojis = codeToEmoji(userParam);
+      
+      // Only update if different from current state
+      if (emojis !== userKey) {
+        setUserKey(emojis);
+        // Update emoji indices directly to match the URL
+        const indices = emojiStringToIndices(emojis);
+        setEmojiIdx(indices);
+      }
+      // Exit early since we've handled the URL parameter
+      return;
+    }
+    
+    // If no valid user param in URL, check localStorage
+    const storedKey = localStorage.getItem('hs_user');
+    if (storedKey && storedKey.length >= 3) {
+      setUserKey(storedKey);
+      setEmojiIdx(emojiStringToIndices(storedKey));
+    }
+    // If no stored key, the default state is already set
+  }, []); // Empty dependency array means this only runs once on mount
+
+  // 2. Initialize emoji indices from userKey when it changes
+  useEffect(() => {
+    try {
+      if (!userKey) return;
+      
+      const newIndices = emojiStringToIndices(userKey);
+      
+      // Only update if different to prevent loops
+      setEmojiIdx(prevIndices => {
+        if (JSON.stringify(prevIndices) === JSON.stringify(newIndices)) {
+          return prevIndices;
+        }
+        return newIndices;
+      });
+    } catch (e) {
+      console.error('Error initializing emoji indices:', e);
+    }
+  }, [userKey, emojiStringToIndices]);
+
+  // 3. Update URL and localStorage when emojiIdx changes
   useEffect(() => {
     if (!emojiIdx) return;
     
@@ -326,10 +373,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     try {
       const url = new URL(window.location.href);
       const currentUserParam = url.searchParams.get('user');
-      const newUserParam = newEmojiString.split('').map(emoji => {
-        const found = emojiOptions.find(e => e.emoji === emoji);
-        return found ? found.code : 'smile';
-      }).join('_');
+      const newUserParam = emojiToCode(newEmojiString);
       
       // Only update if different to prevent loops
       if (currentUserParam !== newUserParam) {
@@ -351,40 +395,6 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       }
     }
   }, [emojiIdx, emojiOptions, indicesToEmojiString, userKey]);
-  
-  // Handle initial load from URL - only runs once on mount
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const userParam = params.get('user');
-    
-    if (userParam) {
-      const codes = userParam.split('_');
-      if (codes.length === 3) {
-        const emojis = codes.map(code => {
-          const found = emojiOptions.find(e => e.code === code);
-          return found ? found.emoji : '😀';
-        }).join('');
-        
-        // Only update if different from current state
-        if (emojis !== userKey) {
-          setUserKey(emojis);
-          // Update emoji indices directly to match the URL
-          const indices = emojiStringToIndices(emojis);
-          setEmojiIdx(indices);
-        }
-        // Exit early since we've handled the URL parameter
-        return;
-      }
-    }
-    
-    // If no valid user param in URL, check localStorage
-    const storedKey = localStorage.getItem('hs_user');
-    if (storedKey && storedKey.length >= 3) {
-      setUserKey(storedKey);
-      setEmojiIdx(emojiStringToIndices(storedKey));
-    }
-    // If no stored key, the default state is already set
-  }, []); // Empty dependency array means this only runs once on mount
   
   // Fetch favorites for the current user
   const fetchFavorites = useCallback(async (userKey: string) => {
@@ -449,24 +459,6 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     }
   }, []);
 
-  // Initialize emoji indices from userKey when it changes
-  useEffect(() => {
-    try {
-      if (!userKey) return;
-      
-      const newIndices = emojiStringToIndices(userKey);
-      
-      // Only update if different to prevent loops
-      setEmojiIdx(prevIndices => {
-        if (JSON.stringify(prevIndices) === JSON.stringify(newIndices)) {
-          return prevIndices;
-        }
-        return newIndices;
-      });
-    } catch (e) {
-      console.error('Error initializing emoji indices:', e);
-    }
-  }, [userKey, emojiStringToIndices]);
 
   // Load server favorites for user when userKey is present
   useEffect(() => {
