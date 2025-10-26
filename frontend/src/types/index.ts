@@ -26,3 +26,13 @@ export interface Filters {
   poses: string[];
   ethnicities?: string[];
 }
+
+export interface ActiveFilters {
+  length: string[];
+  texture: string[];
+  face_shape: string[];
+  style_type: string[];
+  pose: string[];
+  ethnicity: string[];
+  search: string;
+}

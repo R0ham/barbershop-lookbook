@@ -1,33 +1,49 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Hairstyle, Filters, ActiveFilters } from '../types';
+import { Hairstyle, Filters } from '../types';
 import HairstyleCard from './HairstyleCard';
 import FilterPanel from './FilterPanel';
 import HairstyleModal from './HairstyleModal';
 
-// API base resolution:
-// - If REACT_APP_API_BASE_URL is provided:
-//    - Append '/api' if it doesn't already include '/api' at the end
-//    - Preserve '/api' or '/.netlify/functions/api' if already present
-// - Otherwise, default to same-origin '/api' (Netlify redirect handles it in prod)
+// API base resolution
 const RAW_BASE = process.env.REACT_APP_API_BASE_URL?.replace(/\/$/, '') || '';
 const HAS_API_SEGMENT = /(^|\/)api(\b|\/)/.test(RAW_BASE);
 const API_BASE = RAW_BASE
   ? (HAS_API_SEGMENT ? RAW_BASE : `${RAW_BASE}/api`)
   : '/api';
 
-const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch }) => {
+// Emoji options for the emoji picker
+const emojiOptions = [
+  { code: '1f600', char: '😀' },
+  { code: '1f603', char: '😃' },
+  { code: '1f604', char: '😄' },
+  { code: '1f601', char: '😁' },
+  { code: '1f606', char: '😆' },
+  { code: '1f605', char: '😅' },
+  { code: '1f923', char: '🤣' },
+  { code: '1f602', char: '😂' },
+  { code: '1f642', char: '🙂' },
+  { code: '1f643', char: '🙃' }
+] as const;
+
+type EmojiOption = typeof emojiOptions[number];
+
+interface ActiveFilters {
+  length: string[];
+  texture: string[];
+  face_shape: string[];
+  style_type: string[];
+  pose: string[];
+  ethnicity: string[];
+  search: string;
+}
+
+interface HairstyleGalleryProps {
+  headerSearch?: string;
+}
+
+const HairstyleGallery: React.FC<HairstyleGalleryProps> = ({ headerSearch = '' }) => {
+  // State for data and UI
   const [filteredHairstyles, setFilteredHairstyles] = useState<Hairstyle[]>([]);
-  // Client-side dedupe: hide repeated images (same image_url) in the current list
-  const uniqueFilteredHairstyles = useMemo(() => {
-    const seen = new Set<string>();
-    return filteredHairstyles.filter(h => {
-      const key = String((h as any)?.image_url || '');
-      if (!key) return true;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [filteredHairstyles]);
   const [filters, setFilters] = useState<Filters>({
     lengths: [],
     textures: [],
@@ -36,6 +52,8 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     poses: [],
     ethnicities: []
   });
+  
+  // Filter state
   const [activeFilters, setActiveFilters] = useState<ActiveFilters>({
     length: [],
     texture: [],
@@ -45,27 +63,263 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     ethnicity: [],
     search: ''
   });
+  
+  // UI state
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedSnapshot, setSelectedSnapshot] = useState<Hairstyle | null>(null);
-  const isAdmin = React.useMemo(() => {
-    try {
-      return new URLSearchParams(window.location.search).get('admin') === '1';
-    } catch { return false; }
-  }, []);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCountHover, setIsCountHover] = useState(false);
+  
+  // User state
+  const [userKey, setUserKey] = useState('');
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [emojiIndices, setEmojiIndices] = useState<[number, number, number]>([0, 0, 0]);
+  const [draggingSlot, setDraggingSlot] = useState<number | null>(null);
+  
+  // Pagination state
   const [page, setPage] = useState(1);
-  const pageSize = 100;
+  const [hasMore, setHasMore] = useState(true);
+  
+  // Refs
+  const dragRef = useRef<{ slot: number | null; lastY: number; accum: number }>({ 
+    slot: null, 
+    lastY: 0, 
+    accum: 0 
+  });
   const lastScrollYRef = useRef<number | null>(null);
   const lastAnchorIdRef = useRef<string | null>(null);
   const latestFetchIdRef = useRef(0);
+  
+  // Constants
+  const enableScrollRestore = false; // Disable scroll restoration for now
+  const pageSize = 100;
+  const isAdmin = false; // TODO: Implement admin check
+  
+  // Memoized values
+  const uniqueFilteredHairstyles = useMemo(() => {
+    const seen = new Set<string>();
+    return filteredHairstyles.filter((h: Hairstyle) => {
+      const key = String(h?.image_url || '');
+      if (!key) return true;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [filteredHairstyles]);
+  
+  const viewHairstyles = useMemo(() => {
+    return favoritesOnly 
+      ? uniqueFilteredHairstyles.filter((h: Hairstyle) => favoriteIds.has(String(h.id)))
+      : uniqueFilteredHairstyles;
+  }, [uniqueFilteredHairstyles, favoritesOnly, favoriteIds]);
+  
+  // Emoji string to indices conversion
+  const emojiStringToIndices = useCallback((emojiString: string): [number, number, number] => {
+    const codes = emojiString.split('_');
+    if (codes.length !== 3) return [0, 0, 0];
+    
+    return codes.map(code => {
+      const index = emojiOptions.findIndex(e => e.code === code);
+      return index >= 0 ? index : 0;
+    }) as [number, number, number];
+  }, []);
+  
+  // Add your other functions and effects here
+  
+  // Render the component
+  return (
+    <div className="hairstyle-gallery">
+      {loading ? (
+        <div>Loading...</div>
+      ) : error ? (
+        <div>Error: {error}</div>
+      ) : (
+        <div className="gallery-content">
+          {/* Gallery content will go here */}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default HairstyleGallery;
+  const [activeFilters, setActiveFilters] = useState<ActiveFilters>({
+    length: [],
+    texture: [],
+    face_shape: [],
+    style_type: [],
+    pose: [],
+    ethnicity: [],
+    search: ''
+  });
+  
+  // UI state
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedSnapshot, setSelectedSnapshot] = useState<Hairstyle | null>(null);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isCountHover, setIsCountHover] = useState(false);
+  
+  // User state
+  const [userKey, setUserKey] = useState<string>('');
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [emojiIndices, setEmojiIndices] = useState<[number, number, number]>([0, 0, 0]);
+  const [draggingSlot, setDraggingSlot] = useState<number | null>(null);
+  
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  
+  // Refs
+  const dragRef = useRef<{ slot: number | null; lastY: number; accum: number }>({ 
+    slot: null, 
+    lastY: 0, 
+    accum: 0 
+  });
+  const lastScrollYRef = useRef<number | null>(null);
+  const lastAnchorIdRef = useRef<string | null>(null);
+  const latestFetchIdRef = useRef(0);
+  
+  // Constants
+  const enableScrollRestore = false; // Disable scroll restoration for now
+  const pageSize = 100;
+  
+  // Memoized values
+  const isAdmin = useMemo(() => {
+    try {
+      return new URLSearchParams(window.location.search).get('admin') === '1';
+    } catch { 
+      return false; 
+    }
+  }, []);
+  
+  // Client-side dedupe: hide repeated images (same image_url) in the current list
+  const uniqueFilteredHairstyles = useMemo(() => {
+    const seen = new Set<string>();
+    return filteredHairstyles.filter((h: Hairstyle) => {
+      const key = String(h?.image_url || '');
+      if (!key) return true;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [filteredHairstyles]);
+  
+  // Current view of hairstyles (filtered + paginated)
+  const viewHairstyles = useMemo(() => {
+    return favoritesOnly 
+      ? uniqueFilteredHairstyles.filter((h: Hairstyle) => favoriteIds.has(String(h.id)))
+      : uniqueFilteredHairstyles;
+  }, [uniqueFilteredHairstyles, favoritesOnly, favoriteIds]);
+  
+  // Filter state
+  // Filter and search state
+  const [activeFilters, setActiveFilters] = useState<ActiveFilters>({
+    length: [],
+    texture: [],
+    face_shape: [],
+    style_type: [],
+    pose: [],
+    ethnicity: [],
+    search: ''
+  });
+  
+  // UI state
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedSnapshot, setSelectedSnapshot] = useState<Hairstyle | null>(null);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isCountHover, setIsCountHover] = useState(false);
+  
+  // User state
+  const [userKey, setUserKey] = useState<string>('');
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [emojiIndices, setEmojiIndices] = useState<[number, number, number]>([0, 0, 0]);
+  const [draggingSlot, setDraggingSlot] = useState<number | null>(null);
+  
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  
+  // Refs
+  const dragRef = useRef<{ slot: number | null; lastY: number; accum: number }>({ 
+    slot: null, 
+    lastY: 0, 
+    accum: 0 
+  });
+  const lastScrollYRef = useRef<number | null>(null);
+  const lastAnchorIdRef = useRef<string | null>(null);
+  const latestFetchIdRef = useRef(0);
+  
+  // Constants
+  const enableScrollRestore = false; // Disable scroll restoration for now
+  const pageSize = 100;
+  
+  // Memoized values
+  const isAdmin = useMemo(() => {
+    try {
+      return new URLSearchParams(window.location.search).get('admin') === '1';
+    } catch { 
+      return false; 
+    }
+  }, []);
+  
+  // Client-side dedupe: hide repeated images (same image_url) in the current list
+  const uniqueFilteredHairstyles = useMemo(() => {
+    const seen = new Set<string>();
+    return filteredHairstyles.filter((h: Hairstyle) => {
+      const key = String(h?.image_url || '');
+      if (!key) return true;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [filteredHairstyles]);
+  
+  // Current view of hairstyles (filtered + paginated)
+  const viewHairstyles = useMemo(() => {
+    return favoritesOnly 
+      ? uniqueFilteredHairstyles.filter((h: Hairstyle) => favoriteIds.has(String(h.id)))
+      : uniqueFilteredHairstyles;
+  }, [uniqueFilteredHairstyles, favoritesOnly, favoriteIds]);
+  
+  // Emoji options for user identification
+  const emojiOptions = useMemo(() => [
+    { emoji: '😀', code: 'smile' },
+    { emoji: '😎', code: 'cool' },
+    { emoji: '🤩', code: 'star_eyes' },
+    { emoji: '🤠', code: 'cowboy' },
+    { emoji: '🧐', code: 'monocle' },
+    { emoji: '🥳', code: 'party' },
+    { emoji: '😊', code: 'blush' },
+    { emoji: '🤔', code: 'thinking' },
+    { emoji: '😴', code: 'sleepy' },
+    { emoji: '🤪', code: 'zany' }
+  ], []);
+  
+  // Convert emoji string to indices
+  const emojiStringToIndices = useCallback((emojiString: string): [number, number, number] => {
+    const codes = emojiString.split('_');
+    if (codes.length !== 3) return [0, 0, 0];
+    
+    return codes.map(code => {
+      const index = emojiOptions.findIndex(e => e.code === code);
+      return index >= 0 ? index : 0;
+    }) as [number, number, number];
+  }, [emojiOptions]);
 
   // Memoize emoji options to prevent unnecessary re-renders
   const emojiOptions = useMemo(() => [
     { emoji: '😀', code: 'smile' },
     { emoji: '😎', code: 'cool' },
+    { emoji: '🤩', code: 'star_eyes' },
     { emoji: '🤠', code: 'cowboy' },
     { emoji: '🧐', code: 'monocle' },
     { emoji: '🥳', code: 'party' },
@@ -104,41 +358,153 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     { emoji: '🎭', code: 'masks' }
   ], []);
   
-  const [draggingSlot, setDraggingSlot] = useState<number | null>(null);
-  const dragRef = useRef<{ slot: number | null; lastY: number; accum: number }>({ slot: null, lastY: 0, accum: 0 });
-
-  // Helper functions
-  // Generate a new random emoji key
-  const randomEmoji = () => {
-    const emojis = emojiOptions.map(e => e.emoji);
-    const randomIndex = Math.floor(Math.random() * emojis.length);
-    return emojis[randomIndex];
-  };
-
-  // Convert emoji into coded string
-  const emojiToCode = useCallback((input: string): string => {
-    // Use Array.from to properly handle emoji characters
-    const emojis = Array.from(input);
-    // console.log('Input emojis:', emojis.map(c => `${c} (${c.codePointAt(0)?.toString(16)})`));
-    
-    const convert = (emoji: string) => {
-      // console.log('Looking for emoji:', emoji, 'code:', emoji.codePointAt(0)?.toString(16));
-      const found = emojiOptions.find(e => e.emoji === emoji);
-      // console.log('Found:', found?.code || 'not found');
-      return found ? found.code : 'smile';
-    };
-    
-    return emojis.map(convert).join('_');
+  // Initialize emoji indices from URL or generate random ones
+  const getInitialEmojiIndices = useCallback((): [number, number, number] => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const urlKey = params.get('user');
+      
+      if (urlKey) {
+        // Convert URL key to emoji indices
+        const codes = urlKey.split('_');
+        if (codes.length === 3) {
+          return codes.map(code => {
+            const index = emojiOptions.findIndex(e => e.code === code);
+            return index >= 0 ? index : 0;
+          }) as [number, number, number];
+        }
+      }
+      
+      // Generate random indices if no valid URL parameter
+      return Array(3).fill(0).map(() => 
+        Math.floor(Math.random() * emojiOptions.length)
+      ) as [number, number, number];
+      
+    } catch (e) {
+      console.error('Error initializing emoji indices:', e);
+      return [0, 0, 0];
+    }
   }, [emojiOptions]);
 
-  // Convert coded string into emoji
-  const codeToEmoji = useCallback((input: string): string => {
-    const convert = (code: string) => {
-      const found = emojiOptions.find(e => e.code === code);
-      return found ? found.emoji : '😀';
+  // State for emoji picker
+  const [emojiIndices, setEmojiIndices] = useState<[number, number, number]>([0, 0, 0]);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [draggingSlot, setDraggingSlot] = useState<number | null>(null);
+  const dragRef = useRef<{ slot: number | null; lastY: number; accum: number }>({ 
+    slot: null, 
+    lastY: 0, 
+    accum: 0 
+  });
+  
+  // Convert emoji string to indices (for URL parsing)
+  const emojiStringToIndices = useCallback((emojiString: string): [number, number, number] => {
+    const codes = emojiString.split('_');
+    if (codes.length !== 3) return [0, 0, 0];
+    
+    return codes.map(code => {
+      const index = emojiOptions.findIndex(e => e.code === code);
+      return index >= 0 ? index : 0;
+    }) as [number, number, number];
+  }, [emojiOptions]);
+  
+  // Initialize emoji indices from URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const userParam = params.get('user');
+    
+    if (userParam) {
+      try {
+        const newIndices = emojiStringToIndices(userParam);
+        setEmojiIndices(newIndices);
+      } catch (e) {
+        console.error('Error parsing user parameter:', e);
+        // Fallback to random emojis
+        setEmojiIndices([
+          Math.floor(Math.random() * emojiOptions.length),
+          Math.floor(Math.random() * emojiOptions.length),
+          Math.floor(Math.random() * emojiOptions.length)
+        ]);
+      }
+    } else {
+      // No user param, use random emojis
+      setEmojiIndices([
+        Math.floor(Math.random() * emojiOptions.length),
+        Math.floor(Math.random() * emojiOptions.length),
+        Math.floor(Math.random() * emojiOptions.length)
+      ]);
+    }
+    
+    // Set up scroll restoration
+    window.scrollTo(0, 0);
+    window.history.scrollRestoration = 'manual';
+  }, [emojiOptions.length, emojiStringToIndices]);
+  
+  // Derived state for user key from emoji indices
+  const currentUserKey = useMemo(() => {
+    return emojiIndices.map(idx => emojiOptions[idx]?.code || 'smile').join('_');
+  }, [emojiIndices, emojiOptions]);
+  
+  // Fetch favorites when user key changes
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        if (!currentUserKey) return;
+        const response = await fetch(`${API_BASE}/favorites?user_key=${currentUserKey}`);
+        if (response.ok) {
+          const data = await response.json();
+          setFavoriteIds(new Set(data.favorites || []));
+        }
+      } catch (error) {
+        console.error('Error fetching favorites:', error);
+      }
     };
     
-    return input.split('_').map(convert).join('');
+    fetchFavorites();
+    
+    // Set up interval to sync favorites
+    const syncInterval = setInterval(fetchFavorites, 30000);
+    
+    return () => clearInterval(syncInterval);
+  }, [currentUserKey]);
+
+  // Update URL when emoji indices change
+  useEffect(() => {
+    try {
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('user', currentUserKey);
+      
+      if (window.location.search !== newUrl.search) {
+        window.history.replaceState({}, '', newUrl.toString());
+      }
+    } catch (e) {
+      console.error('Error updating URL:', e);
+    }
+  }, [currentUserKey]);
+  
+  // Fetch favorites when user key changes
+  const fetchFavorites = useCallback(async () => {
+    if (!currentUserKey) return;
+    
+    try {
+      const response = await fetch(`${API_BASE}/favorites?user_key=${currentUserKey}`);
+      if (response.ok) {
+        const data = await response.json();
+        setFavoriteIds(new Set(data.favorites || []));
+      }
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+    }
+  }, [currentUserKey]);
+
+  // Helper functions to convert between emoji and code formats
+  const emojiToCode = useCallback((emoji: string) => {
+    const found = emojiOptions.find(e => e.emoji === emoji);
+    return found ? found.code : 'smile';
+  }, [emojiOptions]);
+
+  const codeToEmoji = useCallback((code: string) => {
+    const found = emojiOptions.find(e => e.code === code);
+    return found ? found.emoji : '😀';
   }, [emojiOptions]);
 
   // Get emoji by index safely with bounds checking
@@ -147,314 +513,106 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     const safeIndex = Math.max(0, Math.min(Math.floor(index), emojiOptions.length - 1));
     return emojiOptions[safeIndex]?.emoji || '😀';
   }, [emojiOptions]);
-  
-  // Parse emoji string to index array
-  const emojiToIndices = useCallback((str: string): [number, number, number] => {
-    if (!str) return [0, 0, 0];
-    return Array.from(str)
-      .slice(0, 3)
-      .map(emoji => emojiOptions.findIndex(e => e.emoji === emoji))
-      .map(idx => Math.max(0, idx))
-      .concat([0, 0, 0])
-      .slice(0, 3) as [number, number, number];
+  // Convert indices to emoji string (for reference)
+  const indicesToEmojiString = useCallback((indices: [number, number, number]): string => {
+    return indices.map(idx => emojiOptions[idx]?.emoji || '😀').join('');
   }, [emojiOptions]);
   
-  // Convert indices to emoji string
-  const indicesToEmoji = useCallback((indices: [number, number, number]): string => {
-    if (!indices || !Array.isArray(indices)) return '😀😀😀';
-    return indices.map(idx => getEmoji(idx)).join('');
-  }, [getEmoji]);
+  // Generate random emojis
+  const generateRandomEmojis = useCallback(() => {
+    const newIndices = [
+      Math.floor(Math.random() * emojiOptions.length),
+      Math.floor(Math.random() * emojiOptions.length),
+      Math.floor(Math.random() * emojiOptions.length)
+    ] as [number, number, number];
+    
+    setEmojiIndices(newIndices);
+  }, [emojiOptions.length]);
 
-  // Then define user key state that depends on emojiOptions
-  const [userKey, setUserKey] = useState<string>(() => {
-    try {
-      // First try to get from URL
-      const params = new URLSearchParams(window.location.search);
-      const urlKey = params.get('user');
-      if (urlKey) {
-        // Convert URL key to emoji string
-        const emojiString = codeToEmoji(urlKey);
-        // localStorage.setItem('hs_user', emojiString); // Commented out
-        return emojiString;
-      }
-      const newKey = `${randomEmoji()}${randomEmoji()}${randomEmoji()}`;
-      // Then try localStorage
-      // const storedKey = localStorage.getItem('hs_user');
-      // if (storedKey) return storedKey;
-      
-      // localStorage.setItem('hs_user', newKey); // Commented out
-      // Update URL to match the new key
-      const newUrl = new URL(window.location.href);
-      const newUserParam = emojiToCode(newKey);
-      newUrl.searchParams.set('user', newUserParam);
-      window.history.replaceState({}, '', newUrl.toString());
-
-      console.log(newKey);
-      console.log(newUserParam);
-      
-      return newKey;
-      
-    } catch (e) {
-      console.error('Error initializing user key:', e);
-      return '😀😀😀'; // Fallback
+  // Toggle favorite status for a hairstyle
+  const toggleFavorite = useCallback(async (hairstyleId: string) => {
+    const newFavorites = new Set(favoriteIds);
+    const isFavorite = newFavorites.has(hairstyleId);
+    
+    if (isFavorite) {
+      newFavorites.delete(hairstyleId);
+    } else {
+      newFavorites.add(hairstyleId);
     }
-  });
-
-  // Initialize emoji indices from userKey or default
-  const [emojiIdx, setEmojiIdx] = useState<[number, number, number]>(() => {
+    
+    // Optimistic update
+    setFavoriteIds(newFavorites);
+    
     try {
-      if (userKey && userKey.length >= 3) {
-        return emojiToIndices(userKey);
-      }
-    } catch (e) {
+      const response = await fetch(`${API_BASE}/favorites`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_key: currentUserKey,
+          hairstyle_id: hairstyleId,
+          action: !isFavorite ? 'add' : 'remove'
+        })
+      });
+  };
+  
+  initializeFavorites();
+  
+  // Set up interval to sync favorites
+  const syncInterval = setInterval(initializeFavorites, 30000);
+  
+  return () => clearInterval(syncInterval);
+}, [emojiStringToIndices, generateRandomEmojis, currentUserKey]);
       console.error('Error initializing emoji indices:', e);
     }
-    return [0, 0, 0];
-  });
+  }, [userKey, emojiStringToIndices]);
 
-  // // 1. Handle initial load from URL - only runs once on mount
-  // useEffect(() => {
-  //   const params = new URLSearchParams(window.location.search);
-  //   const userParam = params.get('user');
-    
-  //   if (userParam) {
-  //     const emojis = codeToEmoji(userParam);
-      
-  //     // Only update if different from current state
-  //     if (emojis !== userKey) {
-  //       setUserKey(emojis);
-  //       // Update emoji indices directly to match the URL
-  //       const indices = emojiToIndices(emojis);
-  //       setEmojiIdx(indices);
-  //     }
-  //     // Exit early since we've handled the URL parameter
-  //     return;
-  //   }
-    
-  //   // If no valid user param in URL, check localStorage
-  //   const storedKey = localStorage.getItem('hs_user');
-  //   if (storedKey && storedKey.length >= 3) {
-  //     setUserKey(storedKey);
-  //     setEmojiIdx(emojiToIndices(storedKey));
-  //   }
-  //   // If no stored key, the default state is already set
-  // }, []); // Empty dependency array means this only runs once on mount
-
-  // // 2. Initialize emoji indices from userKey when it changes
-  // useEffect(() => {
-  //   try {
-  //     if (!userKey) return;
-      
-  //     const newIndices = emojiToIndices(userKey);
-      
-  //     // Only update if different to prevent loops
-  //     setEmojiIdx(prevIndices => {
-  //       if (JSON.stringify(prevIndices) === JSON.stringify(newIndices)) {
-  //         return prevIndices;
-  //       }
-  //       return newIndices;
-  //     });
-  //   } catch (e) {
-  //     console.error('Error initializing emoji indices:', e);
-  //   }
-  // }, [userKey, emojiToIndices]);
-
-  // 3. Update URL and localStorage when emojiIdx changes
-  useEffect(() => {
-    if (!emojiIdx) return;
-    
-    // Convert current emoji indices to emoji string
-    const newEmojiString = indicesToEmoji(emojiIdx);
-    
-    // Update URL
-    try {
-      const url = new URL(window.location.href);
-      const currentUserParam = url.searchParams.get('user');
-      const newUserParam = emojiToCode(newEmojiString);
-      
-      // Only update if different to prevent loops
-      if (currentUserParam !== newUserParam) {
-        const newUrl = new URL(url.toString());
-        newUrl.searchParams.set('user', newUserParam);
-        window.history.replaceState({}, '', newUrl.toString());
-      }
-    } catch (e) {
-      console.error('Error updating URL:', e);
-    }
-    
-    // Update localStorage if userKey is different
-    if (newEmojiString !== userKey) {
-      try {
-        localStorage.setItem('hs_user', newEmojiString);
-        setUserKey(newEmojiString);
-      } catch (e) {
-        console.error('Error saving to localStorage:', e);
-      }
-    }
-  }, [emojiIdx, emojiOptions, indicesToEmoji, userKey]);
-
-  // Global mouse handlers for click-and-drag emoji cycling
-  useEffect(() => {
-    if (draggingSlot === null) return;
-    
-    const onMove = (e: MouseEvent) => {
-      e.preventDefault();
-      const slot = dragRef.current.slot;
-      if (slot === null || slot < 0 || slot > 2) return;
-      
-      const dy = e.clientY - dragRef.current.lastY;
-      dragRef.current.lastY = e.clientY;
-      dragRef.current.accum += dy;
-      
-      const step = 18; // pixels per emoji step
-      const emojiCount = emojiOptions.length;
-      
-      // Batch updates for smoother animation
-      let delta = 0;
-      if (Math.abs(dragRef.current.accum) >= step) {
-        delta = Math.floor(dragRef.current.accum / step);
-        dragRef.current.accum %= step;
-        
-        setEmojiIdx(prev => {
-          const newIdx = [...prev] as [number, number, number];
-          // Calculate new index with wrapping
-          newIdx[slot] = (newIdx[slot] - delta + emojiCount) % emojiCount;
-          return newIdx;
-        });
-      }
-    };
-    
-    const onMouseUp = () => {
-      setDraggingSlot(null);
-      dragRef.current = { slot: null, lastY: 0, accum: 0 };
-      document.body.style.userSelect = '';
-    };
-    
-    document.body.style.userSelect = 'none';
-    document.addEventListener('mousemove', onMove, { passive: false });
-    document.addEventListener('mouseup', onMouseUp, { once: true, passive: false });
-    
-    return () => {
-      document.body.style.userSelect = '';
-      document.removeEventListener('mousemove', onMove);
-    };
-  }, [draggingSlot, emojiOptions.length]);
-
-
-
-
-
-  // ---------------------- ---------------------- ---------------------- ---------------------- ---------------------- ----------------------
-
-
-
-
-  // Favorite IDs are stored per user from the server
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
-  const toggleFavorite = async (id: string) => {
-    if (!userKey) return; // Can't favorite without a user
-    
-    const willFav = !favoriteIds.has(id);
-    
-    // Optimistic UI update
-    setFavoriteIds(prev => {
-      const next = new Set(prev);
-      if (willFav) next.add(id); else next.delete(id);
-      return next;
-    });
-    
-    // Sync with server
-    try {
-      const endpoint = `${API_BASE}/favorites/${encodeURIComponent(userKey)}/${id}`;
-      const method = willFav ? 'POST' : 'DELETE';
-      
-      const response = await fetch(endpoint, { method });
-      
-      // Revert on error
-      if (!response.ok) {
-        throw new Error(`Failed to ${willFav ? 'add' : 'remove'} favorite`);
-      }
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      // Revert optimistic update
-      setFavoriteIds(prev => {
-        const next = new Set(prev);
-        if (!willFav) next.add(id); else next.delete(id);
-        return next;
-      });
-    }
-  };
-  // Disable scroll restoration to avoid menu/popover clipping during filter changes
-  const enableScrollRestore = false;
-
-  useEffect(() => {
-    fetchFilters();
-    fetchHairstyles();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  
-  // Fetch favorites for the current user
   const fetchFavorites = useCallback(async (userKey: string) => {
-    if (!userKey) {
-      setFavoriteIds(new Set());
-      return;
-    }
-
+    if (!userKey) return;
+    
     try {
-      const response = await fetch(`${API_BASE}/favorites/${encodeURIComponent(userKey)}`);
-      
+      const response = await fetch(`${API_BASE}/favorites?user_key=${userKey}`);
       if (response.ok) {
         const data = await response.json();
-        // Convert array of favorite objects to a Set of IDs
-        const favoriteIds = new Set<string>();
-        if (Array.isArray(data.favorites)) {
-          data.favorites.forEach((f: { id: string | number }) => {
-            favoriteIds.add(String(f.id));
-          });
-        }
-        setFavoriteIds(favoriteIds);
-      } else {
-        console.error('Failed to fetch favorites:', response.status);
-        setFavoriteIds(new Set());
+        setFavoriteIds(new Set(data.favorites || []));
       }
-    } catch (error) {
-      console.error('Error accessing favorites:', error);
-      setFavoriteIds(new Set());
+    } catch (err) {
+      console.error('Error fetching favorites:', err);
     }
   }, []);
 
-  // Load user from URL on initial load
-  useEffect(() => {
+  const initializeFavorites = useCallback(async (userKey: string) => {
+    if (!userKey) return;
+    await fetchFavorites(userKey);
+  }, [fetchFavorites]);
+
+  const toggleFavorite = useCallback(async (hairstyleId: string) => {
+    if (!userKey) return;
+    
     try {
-      const params = new URLSearchParams(window.location.search);
-      const userCodes = params.get('user');
+      const response = await fetch(`${API_BASE}/favorites`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_key: userKey,
+          hairstyle_id: hairstyleId
+        })
+      });
       
-      if (userCodes) {
-        // Split by underscore and convert codes to emojis
-        const codes = userCodes.split('_');
-        if (codes.length === 3) {
-          const emojis = codes.map(codeToEmoji);
-          const newUserKey = emojis.join('');
-          
-          // Only update if different to prevent loops
-          if (newUserKey !== userKey) {
-            setUserKey(newUserKey);
-            localStorage.setItem('hs_user', newUserKey);
-            fetchFavorites(newUserKey);
+      if (response.ok) {
+        setFavoriteIds(prev => {
+          const newFavorites = new Set(prev);
+          if (newFavorites.has(hairstyleId)) {
+            newFavorites.delete(hairstyleId);
+          } else {
+            newFavorites.add(hairstyleId);
           }
-        }
-      } else {
-        // If no user in URL, check localStorage
-        const storedUser = localStorage.getItem('hs_user');
-        if (storedUser && storedUser !== userKey) {
-          setUserKey(storedUser);
-          fetchFavorites(storedUser);
-        }
+          return newFavorites;
+        });
       }
-    } catch (e) {
-      console.error('Error loading user from URL:', e);
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
     }
-  }, []);
+  }, [userKey]);
 
   // Load server favorites for user when userKey is present
   useEffect(() => {
@@ -894,6 +1052,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
               const b = Math.floor(Math.random() * emojiOptions.length);
               const c = Math.floor(Math.random() * emojiOptions.length);
               const next: [number, number, number] = [a, b, c];
+              const newKey = `${emojiOptions[a].emoji}${emojiOptions[b].emoji}${emojiOptions[c].emoji}`;
               setEmojiIdx(next);
               (e.currentTarget as HTMLButtonElement)?.blur?.();
             }}
@@ -925,13 +1084,13 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
                 title="Click and drag up/down to change emoji"
               >
                 {/* Current emoji */}
-                <span className="text-xl">{getEmoji(emojiIdx[slot])}</span>
+                <span className="text-xl">{getEmoji(emojiIndices[slot])}</span>
                 {/* Arcade-style previews: shown on hover or drag */}
                 <span className={`pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 text-xs transition-opacity duration-150 ${draggingSlot===slot ? 'opacity-80' : 'opacity-0 group-hover:opacity-60'}`}>
-                  {getEmoji((emojiIdx[slot] - 1 + emojiOptions.length) % emojiOptions.length)}
+                  {getEmoji((emojiIndices[slot] - 1 + emojiOptions.length) % emojiOptions.length)}
                 </span>
                 <span className={`pointer-events-none absolute -bottom-5 left-1/2 -translate-x-1/2 text-xs transition-opacity duration-150 ${draggingSlot===slot ? 'opacity-80' : 'opacity-0 group-hover:opacity-60'}`}>
-                  {getEmoji((emojiIdx[slot] + 1) % emojiOptions.length)}
+                  {getEmoji((emojiIndices[slot] + 1) % emojiOptions.length)}
                 </span>
               </button>
             ))}
@@ -943,7 +1102,16 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       <div className="text-center mb-8">
         <button
           onMouseDown={(e) => { e.preventDefault(); }}
-          onClick={(e) => { e.preventDefault(); setFavoritesOnly(false); clearFilters(); setPage(1); (e.currentTarget as HTMLButtonElement)?.blur?.(); }}
+          onClick={(e) => { 
+            e.preventDefault(); 
+            setFavoritesOnly(false); 
+            clearFilters(); 
+            setPage(1); 
+            const target = e.currentTarget as HTMLButtonElement;
+            if (target && typeof target.blur === 'function') {
+              target.blur();
+            }
+          }}
           title="Clear favorites and all filters"
           className={`rounded-full px-5 py-2.5 inline-flex items-center gap-2 border-2 cursor-pointer transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${hasActiveFilters ? 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700' : 'bg-white text-blue-700 border-blue-400 hover:bg-blue-50'}`}
           aria-busy={loading}

@@ -614,13 +614,95 @@ class Database {
       [userId],
       (err, rows) => {
         if (err) return callback(err);
-        // Parse JSON fields for each hairstyle
-        const parsedRows = (rows || []).map(row => ({
-          ...row,
-          face_shapes: JSON.parse(row.face_shapes || '[]'),
-          tags: JSON.parse(row.tags || '[]')
-        }));
-        callback(null, parsedRows);
+        callback(null, rows || []);
+      }
+    );
+  }
+
+  // Add hairstyle to user's favorites
+  addFavorite(userId, hairstyleId, callback) {
+    this.db.serialize(() => {
+      // First ensure the user exists
+      this.getOrCreateUser(userId, (err) => {
+        if (err) return callback(err);
+        
+        // Check if already favorited
+        this.db.get(
+          'SELECT 1 FROM user_favorites WHERE user_id = ? AND hairstyle_id = ?',
+          [userId, hairstyleId],
+          (err, row) => {
+            if (err) return callback(err);
+            
+            if (row) {
+              // Already favorited
+              return callback(null, false);
+            }
+            
+            // Add to favorites
+            this.db.run(
+              'INSERT INTO user_favorites (user_id, hairstyle_id) VALUES (?, ?)',
+              [userId, hairstyleId],
+              function(err) {
+                if (err) return callback(err);
+                callback(null, true);
+              }
+            );
+          }
+        );
+      });
+    });
+  }
+
+  // Remove hairstyle from user's favorites
+  removeFavorite(userId, hairstyleId, callback) {
+    this.db.run(
+      'DELETE FROM user_favorites WHERE user_id = ? AND hairstyle_id = ?',
+      [userId, hairstyleId],
+      function(err) {
+        if (err) return callback(err);
+        callback(null, this.changes > 0);
+      }
+    );
+  }
+
+  // Check if a hairstyle is favorited by user
+  isFavorite(userId, hairstyleId, callback) {
+    this.db.get(
+      'SELECT 1 FROM user_favorites WHERE user_id = ? AND hairstyle_id = ?',
+      [userId, hairstyleId],
+      (err, row) => {
+        if (err) return callback(err);
+        callback(null, !!row);
+      }
+    );
+  }
+}
+          // Create new user
+          this.db.run(
+            'INSERT INTO users (id) VALUES (?)',
+            [userId],
+            function(err) {
+              if (err) return callback(err);
+              callback(null, { id: userId });
+            }
+          );
+        }
+      });
+    });
+  }
+
+  // Get user's favorite hairstyles
+  getUserFavorites(userId, callback) {
+    this.db.all(
+      `SELECT h.* 
+       FROM hairstyles h
+       JOIN user_favorites uf ON h.id = uf.hairstyle_id
+       WHERE uf.user_id = ?
+       ORDER BY uf.created_at DESC`,
+      [userId],
+      (err, rows) => {
+        if (err) return callback(err);
+        callback(null, rows || []);
       }
     );
   }

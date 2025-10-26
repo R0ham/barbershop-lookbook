@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
 const Database = require('./database');
+const favoritesRouter = require('./favorites-api');
 const fetch = require('node-fetch');
 
 const app = express();
@@ -29,6 +30,9 @@ const upload = multer({
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Favorites API
+app.use('/api/favorites', favoritesRouter);
 
 // Routes
 // Local proxy for Unsplash images to mirror Netlify function in dev

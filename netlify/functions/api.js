@@ -42,6 +42,53 @@ async function init() {
       -- Safe migrations for existing tables
       ALTER TABLE hairstyles ADD COLUMN IF NOT EXISTS artist_name TEXT;
       ALTER TABLE hairstyles ADD COLUMN IF NOT EXISTS artist_url TEXT;
+      
+      -- Favorites: simple per-user key (emoji username)
+      CREATE TABLE IF NOT EXISTS users (
+        user_key TEXT PRIMARY KEY,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        last_active TIMESTAMPTZ DEFAULT NOW()
+      );
+      
+      CREATE TABLE IF NOT EXISTS user_favorites (
+        user_key TEXT NOT NULL,
+        hairstyle_id UUID NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        PRIMARY KEY (user_key, hairstyle_id),
+        CONSTRAINT fk_user
+          FOREIGN KEY(user_key) 
+          REFERENCES users(user_key)
+          ON DELETE CASCADE
+      );
+      
+      -- Create default user if none exists
+      CREATE OR REPLACE FUNCTION ensure_default_user() RETURNS void AS $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM users WHERE user_key = 'default') THEN
+          INSERT INTO users (user_key) VALUES ('default');
+        END IF;
+      END;
+      $$ LANGUAGE plpgsql;
+      
+      SELECT ensure_default_user();
+      
+      -- Create indexes for better performance
+      CREATE INDEX IF NOT EXISTS idx_user_fav_user ON user_favorites(user_key);
+      CREATE INDEX IF NOT EXISTS idx_user_fav_hsid ON user_favorites(hairstyle_id);
+      
+      -- Update last_active timestamp on user interaction
+      CREATE OR REPLACE FUNCTION update_user_activity() RETURNS TRIGGER AS $$
+      BEGIN
+        UPDATE users SET last_active = NOW() WHERE user_key = NEW.user_key;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+      
+      DROP TRIGGER IF EXISTS trigger_user_activity ON user_favorites;
+      CREATE TRIGGER trigger_user_activity
+      AFTER INSERT OR UPDATE OR DELETE ON user_favorites
+      FOR EACH ROW
+      EXECUTE FUNCTION update_user_activity();
     `);
 
     // Backfill/seed
@@ -181,6 +228,121 @@ async function handleUpdateEthnicity(id, body) {
   return json(null, 200, { updated: true });
 }
 
+async function handleGetFavorites(query) {
+  const user = query.user || 'default';
+  
+  try {
+    // Start a transaction
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // Ensure user exists
+      await client.query(
+        'INSERT INTO users (user_key) VALUES ($1) ON CONFLICT (user_key) DO UPDATE SET last_active = NOW()',
+        [user]
+      );
+      
+      // Get favorites
+      const { rows } = await client.query(
+        'SELECT hairstyle_id FROM user_favorites WHERE user_key = $1',
+        [user]
+      );
+      
+      await client.query('COMMIT');
+      
+      return json(null, 200, {
+        favorites: rows.map(row => row.hairstyle_id)
+      });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Database error:', error);
+    return json(null, 500, { 
+      error: 'Failed to fetch favorites',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}
+
+async function handlePutFavorite(body) {
+  try {
+    const { user: userKey, hairstyle_id, favorite } = JSON.parse(body);
+    const user = userKey || 'default';
+    
+    // Validate UUID format
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(hairstyle_id)) {
+      return json(null, 400, { error: 'Invalid hairstyle ID format' });
+    }
+    
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      // Ensure user exists and update last_active
+      await client.query(
+        `INSERT INTO users (user_key) 
+         VALUES ($1) 
+         ON CONFLICT (user_key) 
+         DO UPDATE SET last_active = NOW() 
+         RETURNING user_key`,
+        [user]
+      );
+      
+      // Verify hairstyle exists
+      const { rows } = await client.query(
+        'SELECT 1 FROM hairstyles WHERE id = $1',
+        [hairstyle_id]
+      );
+      
+      if (rows.length === 0) {
+        await client.query('ROLLBACK');
+        return json(null, 404, { error: 'Hairstyle not found' });
+      }
+      
+      // Update favorite status
+      if (favorite) {
+        await client.query(
+          `INSERT INTO user_favorites (user_key, hairstyle_id) 
+           VALUES ($1, $2) 
+           ON CONFLICT (user_key, hairstyle_id) DO NOTHING`,
+          [user, hairstyle_id]
+        );
+      } else {
+        await client.query(
+          'DELETE FROM user_favorites WHERE user_key = $1 AND hairstyle_id = $2',
+          [user, hairstyle_id]
+        );
+      }
+      
+      await client.query('COMMIT');
+      return json(null, 200, { 
+        updated: true,
+        user,
+        hairstyle_id,
+        favorite
+      });
+      
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+    
+  } catch (error) {
+    console.error('Error updating favorite:', error);
+    return json(null, 500, { 
+      error: 'Failed to update favorite',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+}
+
 exports.handler = async (event, context) => {
   if (!process.env.DATABASE_URL) {
     return json(null, 500, { error: 'DATABASE_URL not configured' });
@@ -200,6 +362,9 @@ exports.handler = async (event, context) => {
     if (method === 'GET' && (rel === '/hairstyles' || rel === '/api/hairstyles')) {
       return await handleGetHairstyles(parseQueryString(event.rawQuery || event.queryStringParameters));
     }
+    if (method === 'GET' && (rel === '/favorites' || rel === '/api/favorites')) {
+      return await handleGetFavorites(parseQueryString(event.rawQuery || event.queryStringParameters));
+    }
     // GET by id
     const m1 = rel.match(/^\/hairstyles\/([a-f0-9\-]+)$/i) || rel.match(/^\/api\/hairstyles\/([a-f0-9\-]+)$/i);
     if (method === 'GET' && m1) {
@@ -209,6 +374,9 @@ exports.handler = async (event, context) => {
     const m2 = rel.match(/^\/hairstyles\/([a-f0-9\-]+)\/ethnicity$/i) || rel.match(/^\/api\/hairstyles\/([a-f0-9\-]+)\/ethnicity$/i);
     if (method === 'PUT' && m2) {
       return await handleUpdateEthnicity(m2[1], event.body);
+    }
+    if (method === 'PUT' && (rel === '/favorites' || rel === '/api/favorites')) {
+      return await handlePutFavorite(event.body);
     }
 
     return json(null, 404, { error: 'Not found' });
