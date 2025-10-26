@@ -836,7 +836,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
         <div className="text-red-600 mb-4">{error}</div>
         <button
           onClick={fetchHairstyles}
-          className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
+          className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
         >
           Try Again
         </button>
@@ -943,9 +943,15 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       <div className="text-center mb-8">
         <button
           onMouseDown={(e) => { e.preventDefault(); }}
-          onClick={(e) => { e.preventDefault(); setFavoritesOnly(false); clearFilters(); setPage(1); (e.currentTarget as HTMLButtonElement)?.blur?.(); }}
-          title="Clear favorites and all filters"
-          className={`rounded-full px-5 py-2.5 inline-flex items-center gap-2 border-2 cursor-pointer transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${hasActiveFilters ? 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700' : 'bg-white text-blue-700 border-blue-400 hover:bg-blue-50'}`}
+          onClick={(e) => { 
+            e.preventDefault(); 
+            setFavoritesOnly(false);
+            clearFilters(); 
+            setPage(1); 
+            (e.currentTarget as HTMLButtonElement)?.blur?.(); 
+          }}
+          title={favoritesOnly || hasActiveFilters ? 'Clear all filters' : ''}
+          className={`rounded-full px-5 py-2.5 inline-flex items-center gap-2 border-2 cursor-pointer transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 ${favoritesOnly || hasActiveFilters ? 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700' : 'bg-white text-blue-700 border-blue-400 hover:bg-blue-50'}`}
           aria-busy={loading}
         >
           {loading ? (
@@ -961,8 +967,8 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
             return (
               <>
                 <span>{count} classic cut{count !== 1 ? 's' : ''}</span>
-                {hasActiveFilters && <span aria-hidden>•</span>}
-                {hasActiveFilters && <span className="font-semibold">Clear all</span>}
+                {(favoritesOnly || hasActiveFilters) && <span aria-hidden>•</span>}
+                {(favoritesOnly || hasActiveFilters) && <span className="font-semibold">Clear all</span>}
               </>
             );
           })()}
