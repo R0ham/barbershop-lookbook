@@ -66,7 +66,6 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   const emojiOptions = useMemo(() => [
     { emoji: '😀', code: 'smile' },
     { emoji: '😎', code: 'cool' },
-    { emoji: '🤩', code: 'star_eyes' },
     { emoji: '🤠', code: 'cowboy' },
     { emoji: '🧐', code: 'monocle' },
     { emoji: '🥳', code: 'party' },
@@ -108,45 +107,15 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   const [draggingSlot, setDraggingSlot] = useState<number | null>(null);
   const dragRef = useRef<{ slot: number | null; lastY: number; accum: number }>({ slot: null, lastY: 0, accum: 0 });
 
-  // Then define user key state that depends on emojiOptions
-  const [userKey, setUserKey] = useState<string>(() => {
-    try {
-      // First try to get from URL
-      const params = new URLSearchParams(window.location.search);
-      const urlKey = params.get('user');
-      if (urlKey) {
-        // Convert URL key to emoji string
-        const emojiString = codeToEmoji(urlKey);
-        // localStorage.setItem('hs_user', emojiString); // Commented out
-        return emojiString;
-      }
-      
-      // Then try localStorage
-      // const storedKey = localStorage.getItem('hs_user');
-      // if (storedKey) return storedKey;
-      
-      // Generate a new random emoji key
-      const randomEmoji = () => {
-        const emojis = emojiOptions.map(e => e.emoji);
-        const randomIndex = Math.floor(Math.random() * emojis.length);
-        return emojis[randomIndex];
-      };
-      const newKey = `${randomEmoji()}${randomEmoji()}${randomEmoji()}`;
-      // localStorage.setItem('hs_user', newKey); // Commented out
-      // Update URL to match the new key
-      const newUrl = new URL(window.location.href);
-      const newUserParam = emojiToCode(newKey);
-      newUrl.searchParams.set('user', newUserParam);
-      window.history.replaceState({}, '', newUrl.toString());
-      
-      return newKey;
-    } catch (e) {
-      console.error('Error initializing user key:', e);
-      return '😀😀😀'; // Fallback
-    }
-  });
+  // Helper functions
+  // Generate a new random emoji key
+  const randomEmoji = () => {
+    const emojis = emojiOptions.map(e => e.emoji);
+    const randomIndex = Math.floor(Math.random() * emojis.length);
+    return emojis[randomIndex];
+  };
 
-  // Helper functions to convert between emoji and code formats
+  // Convert emoji into coded string
   const emojiToCode = useCallback((input: string): string => {
     const convert = (emoji: string) => {
       const found = emojiOptions.find(e => e.emoji === emoji);
@@ -156,6 +125,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     return input.split('').map(convert).join('_');
   }, [emojiOptions]);
 
+  // Convert coded string into emoji
   const codeToEmoji = useCallback((input: string): string => {
     const convert = (code: string) => {
       const found = emojiOptions.find(e => e.code === code);
@@ -174,21 +144,52 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   
   // Parse emoji string to index array
   const emojiToIndices = useCallback((str: string): [number, number, number] => {
-    if (!str || str.length < 3) return [0, 0, 0];
-    const result: number[] = [];
-    for (let i = 0; i < 3; i++) {
-      const emoji = str[i];
-      const index = emojiOptions.findIndex(e => e.emoji === emoji);
-      result.push(index >= 0 ? index : 0);
-    }
-    return result as [number, number, number];
+    return str
+      .split('')
+      .slice(0, 3)
+      .map(emoji => emojiOptions.findIndex(e => e.emoji === emoji))
+      .map(idx => Math.max(0, idx))
+      .concat([0, 0, 0])
+      .slice(0, 3) as [number, number, number];
   }, [emojiOptions]);
   
   // Convert indices to emoji string
   const indicesToEmoji = useCallback((indices: [number, number, number]): string => {
-    return indices.map(idx => emojiOptions[idx]?.emoji || '😀').join('');
-  }, [emojiOptions]);
-  
+    return indices.map(idx => getEmoji(idx)).join('');
+  }, [getEmoji]);
+
+  // Then define user key state that depends on emojiOptions
+  const [userKey, setUserKey] = useState<string>(() => {
+    try {
+      // First try to get from URL
+      const params = new URLSearchParams(window.location.search);
+      const urlKey = params.get('user');
+      if (urlKey) {
+        // Convert URL key to emoji string
+        const emojiString = codeToEmoji(urlKey);
+        // localStorage.setItem('hs_user', emojiString); // Commented out
+        return emojiString;
+      }
+      
+      // Then try localStorage
+      // const storedKey = localStorage.getItem('hs_user');
+      // if (storedKey) return storedKey;
+      
+      const newKey = `${randomEmoji()}${randomEmoji()}${randomEmoji()}`;
+      // localStorage.setItem('hs_user', newKey); // Commented out
+      // Update URL to match the new key
+      const newUrl = new URL(window.location.href);
+      const newUserParam = emojiToCode(newKey);
+      newUrl.searchParams.set('user', newUserParam);
+      window.history.replaceState({}, '', newUrl.toString());
+      
+      return newKey;
+    } catch (e) {
+      console.error('Error initializing user key:', e);
+      return '😀😀😀'; // Fallback
+    }
+  });
+
   // Initialize emoji indices from userKey or default
   const [emojiIdx, setEmojiIdx] = useState<[number, number, number]>(() => {
     try {
@@ -229,58 +230,58 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   //   // If no stored key, the default state is already set
   // }, []); // Empty dependency array means this only runs once on mount
 
-  // 2. Initialize emoji indices from userKey when it changes
-  useEffect(() => {
-    try {
-      if (!userKey) return;
+  // // 2. Initialize emoji indices from userKey when it changes
+  // useEffect(() => {
+  //   try {
+  //     if (!userKey) return;
       
-      const newIndices = emojiToIndices(userKey);
+  //     const newIndices = emojiToIndices(userKey);
       
-      // Only update if different to prevent loops
-      setEmojiIdx(prevIndices => {
-        if (JSON.stringify(prevIndices) === JSON.stringify(newIndices)) {
-          return prevIndices;
-        }
-        return newIndices;
-      });
-    } catch (e) {
-      console.error('Error initializing emoji indices:', e);
-    }
-  }, [userKey, emojiToIndices]);
+  //     // Only update if different to prevent loops
+  //     setEmojiIdx(prevIndices => {
+  //       if (JSON.stringify(prevIndices) === JSON.stringify(newIndices)) {
+  //         return prevIndices;
+  //       }
+  //       return newIndices;
+  //     });
+  //   } catch (e) {
+  //     console.error('Error initializing emoji indices:', e);
+  //   }
+  // }, [userKey, emojiToIndices]);
 
-  // 3. Update URL and localStorage when emojiIdx changes
-  useEffect(() => {
-    if (!emojiIdx) return;
+  // // 3. Update URL and localStorage when emojiIdx changes
+  // useEffect(() => {
+  //   if (!emojiIdx) return;
     
-    // Convert current emoji indices to emoji string
-    const newEmojiString = indicesToEmoji(emojiIdx);
+  //   // Convert current emoji indices to emoji string
+  //   const newEmojiString = indicesToEmoji(emojiIdx);
     
-    // Update URL
-    try {
-      const url = new URL(window.location.href);
-      const currentUserParam = url.searchParams.get('user');
-      const newUserParam = emojiToCode(newEmojiString);
+  //   // Update URL
+  //   try {
+  //     const url = new URL(window.location.href);
+  //     const currentUserParam = url.searchParams.get('user');
+  //     const newUserParam = emojiToCode(newEmojiString);
       
-      // Only update if different to prevent loops
-      if (currentUserParam !== newUserParam) {
-        const newUrl = new URL(url.toString());
-        newUrl.searchParams.set('user', newUserParam);
-        window.history.replaceState({}, '', newUrl.toString());
-      }
-    } catch (e) {
-      console.error('Error updating URL:', e);
-    }
+  //     // Only update if different to prevent loops
+  //     if (currentUserParam !== newUserParam) {
+  //       const newUrl = new URL(url.toString());
+  //       newUrl.searchParams.set('user', newUserParam);
+  //       window.history.replaceState({}, '', newUrl.toString());
+  //     }
+  //   } catch (e) {
+  //     console.error('Error updating URL:', e);
+  //   }
     
-    // Update localStorage if userKey is different
-    if (newEmojiString !== userKey) {
-      try {
-        localStorage.setItem('hs_user', newEmojiString);
-        setUserKey(newEmojiString);
-      } catch (e) {
-        console.error('Error saving to localStorage:', e);
-      }
-    }
-  }, [emojiIdx, emojiOptions, indicesToEmoji, userKey]);
+  //   // Update localStorage if userKey is different
+  //   if (newEmojiString !== userKey) {
+  //     try {
+  //       localStorage.setItem('hs_user', newEmojiString);
+  //       setUserKey(newEmojiString);
+  //     } catch (e) {
+  //       console.error('Error saving to localStorage:', e);
+  //     }
+  //   }
+  // }, [emojiIdx, emojiOptions, indicesToEmoji, userKey]);
 
   // Global mouse handlers for click-and-drag emoji cycling
   useEffect(() => {
