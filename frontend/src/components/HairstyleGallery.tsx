@@ -114,10 +114,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       const urlKey = params.get('user');
       if (urlKey) {
         // Convert URL key to emoji string
-        const emojiString = urlKey.split('_').map(code => {
-          const found = emojiOptions.find(e => e.code === code);
-          return found ? found.emoji : '😀';
-        }).join('');
+        const emojiString = codeToEmoji(urlKey);
         // localStorage.setItem('hs_user', emojiString); // Commented out
         return emojiString;
       }
@@ -136,9 +133,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       // localStorage.setItem('hs_user', newKey); // Commented out
       // Update URL to match the new key
       const newUrl = new URL(window.location.href);
-      const newUserParam = newKey.split('').map(emoji => 
-        emojiOptions.find(e => e.emoji === emoji)?.code || 'smile'
-      ).join('_');
+      const newUserParam = emojiToCode(newKey);
       newUrl.searchParams.set('user', newUserParam);
       window.history.replaceState({}, '', newUrl.toString());
       
@@ -150,14 +145,22 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   });
 
   // Helper functions to convert between emoji and code formats
-  const emojiToCode = useCallback((emoji: string) => {
-    const found = emojiOptions.find(e => e.emoji === emoji);
-    return found ? found.code : 'smile';
+  const emojiToCode = useCallback((input: string): string => {
+    const convert = (emoji: string) => {
+      const found = emojiOptions.find(e => e.emoji === emoji);
+      return found ? found.code : 'smile';
+    };
+    
+    return input.split('').map(convert).join('_');
   }, [emojiOptions]);
 
-  const codeToEmoji = useCallback((code: string) => {
-    const found = emojiOptions.find(e => e.code === code);
-    return found ? found.emoji : '😀';
+  const codeToEmoji = useCallback((input: string): string => {
+    const convert = (code: string) => {
+      const found = emojiOptions.find(e => e.code === code);
+      return found ? found.emoji : '😀';
+    };
+    
+    return input.split('_').map(convert).join('');
   }, [emojiOptions]);
 
   // Get emoji by index safely with bounds checking
