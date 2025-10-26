@@ -171,7 +171,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   }, [emojiOptions]);
   
   // Parse emoji string to index array
-  const emojiStringToIndices = useCallback((str: string): [number, number, number] => {
+  const emojiToIndices = useCallback((str: string): [number, number, number] => {
     if (!str || str.length < 3) return [0, 0, 0];
     const result: number[] = [];
     for (let i = 0; i < 3; i++) {
@@ -183,14 +183,15 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   }, [emojiOptions]);
   
   // Convert indices to emoji string
-  const indicesToEmojiString = useCallback((indices: [number, number, number]): string => {
+  const indicesToEmoji = useCallback((indices: [number, number, number]): string => {
     return indices.map(idx => emojiOptions[idx]?.emoji || '😀').join('');
   }, [emojiOptions]);
+  
   // Initialize emoji indices from userKey or default
   const [emojiIdx, setEmojiIdx] = useState<[number, number, number]>(() => {
     try {
       if (userKey && userKey.length >= 3) {
-        return emojiStringToIndices(userKey);
+        return emojiToIndices(userKey);
       }
     } catch (e) {
       console.error('Error initializing emoji indices:', e);
@@ -202,7 +203,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   // useEffect(() => {
   //   if (!emojiIdx) return;
     
-  //   const newEmojiString = indicesToEmojiString(emojiIdx);
+  //   const newEmojiString = indicesToEmoji(emojiIdx);
     
   //   // Update URL without adding to history
   //   try {
@@ -221,7 +222,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   //   if (newEmojiString !== userKey) {
   //     setUserKey(newEmojiString);
   //   }
-  // }, [emojiIdx, emojiOptions, indicesToEmojiString, userKey]);
+  // }, [emojiIdx, emojiOptions, indicesToEmoji, userKey]);
   const [draggingSlot, setDraggingSlot] = useState<number | null>(null);
   const dragRef = useRef<{ slot: number | null; lastY: number; accum: number }>({ slot: null, lastY: 0, accum: 0 });
   // Favorite IDs are stored per user from the server
@@ -315,40 +316,40 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     };
   }, [draggingSlot, emojiOptions.length]);
 
-  // 1. Handle initial load from URL - only runs once on mount
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const userParam = params.get('user');
+  // // 1. Handle initial load from URL - only runs once on mount
+  // useEffect(() => {
+  //   const params = new URLSearchParams(window.location.search);
+  //   const userParam = params.get('user');
     
-    if (userParam) {
-      const emojis = codeToEmoji(userParam);
+  //   if (userParam) {
+  //     const emojis = codeToEmoji(userParam);
       
-      // Only update if different from current state
-      if (emojis !== userKey) {
-        setUserKey(emojis);
-        // Update emoji indices directly to match the URL
-        const indices = emojiStringToIndices(emojis);
-        setEmojiIdx(indices);
-      }
-      // Exit early since we've handled the URL parameter
-      return;
-    }
+  //     // Only update if different from current state
+  //     if (emojis !== userKey) {
+  //       setUserKey(emojis);
+  //       // Update emoji indices directly to match the URL
+  //       const indices = emojiToIndices(emojis);
+  //       setEmojiIdx(indices);
+  //     }
+  //     // Exit early since we've handled the URL parameter
+  //     return;
+  //   }
     
-    // If no valid user param in URL, check localStorage
-    const storedKey = localStorage.getItem('hs_user');
-    if (storedKey && storedKey.length >= 3) {
-      setUserKey(storedKey);
-      setEmojiIdx(emojiStringToIndices(storedKey));
-    }
-    // If no stored key, the default state is already set
-  }, []); // Empty dependency array means this only runs once on mount
+  //   // If no valid user param in URL, check localStorage
+  //   const storedKey = localStorage.getItem('hs_user');
+  //   if (storedKey && storedKey.length >= 3) {
+  //     setUserKey(storedKey);
+  //     setEmojiIdx(emojiToIndices(storedKey));
+  //   }
+  //   // If no stored key, the default state is already set
+  // }, []); // Empty dependency array means this only runs once on mount
 
   // 2. Initialize emoji indices from userKey when it changes
   useEffect(() => {
     try {
       if (!userKey) return;
       
-      const newIndices = emojiStringToIndices(userKey);
+      const newIndices = emojiToIndices(userKey);
       
       // Only update if different to prevent loops
       setEmojiIdx(prevIndices => {
@@ -360,14 +361,14 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     } catch (e) {
       console.error('Error initializing emoji indices:', e);
     }
-  }, [userKey, emojiStringToIndices]);
+  }, [userKey, emojiToIndices]);
 
   // 3. Update URL and localStorage when emojiIdx changes
   useEffect(() => {
     if (!emojiIdx) return;
     
     // Convert current emoji indices to emoji string
-    const newEmojiString = indicesToEmojiString(emojiIdx);
+    const newEmojiString = indicesToEmoji(emojiIdx);
     
     // Update URL
     try {
@@ -394,7 +395,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
         console.error('Error saving to localStorage:', e);
       }
     }
-  }, [emojiIdx, emojiOptions, indicesToEmojiString, userKey]);
+  }, [emojiIdx, emojiOptions, indicesToEmoji, userKey]);
   
   // Fetch favorites for the current user
   const fetchFavorites = useCallback(async (userKey: string) => {
@@ -898,7 +899,6 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
               const b = Math.floor(Math.random() * emojiOptions.length);
               const c = Math.floor(Math.random() * emojiOptions.length);
               const next: [number, number, number] = [a, b, c];
-              const newKey = `${emojiOptions[a].emoji}${emojiOptions[b].emoji}${emojiOptions[c].emoji}`;
               setEmojiIdx(next);
               (e.currentTarget as HTMLButtonElement)?.blur?.();
             }}
