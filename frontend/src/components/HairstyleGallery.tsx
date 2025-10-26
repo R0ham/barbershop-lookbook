@@ -60,9 +60,8 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   const lastScrollYRef = useRef<number | null>(null);
   const lastAnchorIdRef = useRef<string | null>(null);
   const latestFetchIdRef = useRef(0);
-  const [isCountHover, setIsCountHover] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
-  
+
   // Memoize emoji options to prevent unnecessary re-renders
   const emojiOptions = useMemo(() => [
     { emoji: '😀', code: 'smile' },
@@ -106,6 +105,9 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     { emoji: '🎭', code: 'masks' }
   ], []);
   
+  const [draggingSlot, setDraggingSlot] = useState<number | null>(null);
+  const dragRef = useRef<{ slot: number | null; lastY: number; accum: number }>({ slot: null, lastY: 0, accum: 0 });
+
   // Then define user key state that depends on emojiOptions
   const [userKey, setUserKey] = useState<string>(() => {
     try {
@@ -199,123 +201,6 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     return [0, 0, 0];
   });
 
-  // // Sync emojiIdx with URL
-  // useEffect(() => {
-  //   if (!emojiIdx) return;
-    
-  //   const newEmojiString = indicesToEmoji(emojiIdx);
-    
-  //   // Update URL without adding to history
-  //   try {
-  //     const url = new URL(window.location.href);
-  //     const newUserParam = emojiIdx.map(idx => emojiOptions[idx]?.code || 'smile').join('_');
-      
-  //     if (url.searchParams.get('user') !== newUserParam) {
-  //       url.searchParams.set('user', newUserParam);
-  //       window.history.replaceState({}, '', url);
-  //     }
-  //   } catch (e) {
-  //     console.error('Error updating URL:', e);
-  //   }
-    
-  //   // Update userKey state if different
-  //   if (newEmojiString !== userKey) {
-  //     setUserKey(newEmojiString);
-  //   }
-  // }, [emojiIdx, emojiOptions, indicesToEmoji, userKey]);
-  const [draggingSlot, setDraggingSlot] = useState<number | null>(null);
-  const dragRef = useRef<{ slot: number | null; lastY: number; accum: number }>({ slot: null, lastY: 0, accum: 0 });
-  // Favorite IDs are stored per user from the server
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
-  const toggleFavorite = async (id: string) => {
-    if (!userKey) return; // Can't favorite without a user
-    
-    const willFav = !favoriteIds.has(id);
-    
-    // Optimistic UI update
-    setFavoriteIds(prev => {
-      const next = new Set(prev);
-      if (willFav) next.add(id); else next.delete(id);
-      return next;
-    });
-    
-    // Sync with server
-    try {
-      const endpoint = `${API_BASE}/favorites/${encodeURIComponent(userKey)}/${id}`;
-      const method = willFav ? 'POST' : 'DELETE';
-      
-      const response = await fetch(endpoint, { method });
-      
-      // Revert on error
-      if (!response.ok) {
-        throw new Error(`Failed to ${willFav ? 'add' : 'remove'} favorite`);
-      }
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      // Revert optimistic update
-      setFavoriteIds(prev => {
-        const next = new Set(prev);
-        if (!willFav) next.add(id); else next.delete(id);
-        return next;
-      });
-    }
-  };
-  // Disable scroll restoration to avoid menu/popover clipping during filter changes
-  const enableScrollRestore = false;
-
-  useEffect(() => {
-    fetchFilters();
-    fetchHairstyles();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Global mouse handlers for click-and-drag emoji cycling
-  useEffect(() => {
-    if (draggingSlot === null) return;
-    
-    const onMove = (e: MouseEvent) => {
-      e.preventDefault();
-      const slot = dragRef.current.slot;
-      if (slot === null || slot < 0 || slot > 2) return;
-      
-      const dy = e.clientY - dragRef.current.lastY;
-      dragRef.current.lastY = e.clientY;
-      dragRef.current.accum += dy;
-      
-      const step = 18; // pixels per emoji step
-      const emojiCount = emojiOptions.length;
-      
-      // Batch updates for smoother animation
-      let delta = 0;
-      if (Math.abs(dragRef.current.accum) >= step) {
-        delta = Math.floor(dragRef.current.accum / step);
-        dragRef.current.accum %= step;
-        
-        setEmojiIdx(prev => {
-          const newIdx = [...prev] as [number, number, number];
-          // Calculate new index with wrapping
-          newIdx[slot] = (newIdx[slot] - delta + emojiCount) % emojiCount;
-          return newIdx;
-        });
-      }
-    };
-    
-    const onMouseUp = () => {
-      setDraggingSlot(null);
-      dragRef.current = { slot: null, lastY: 0, accum: 0 };
-      document.body.style.userSelect = '';
-    };
-    
-    document.body.style.userSelect = 'none';
-    document.addEventListener('mousemove', onMove, { passive: false });
-    document.addEventListener('mouseup', onMouseUp, { once: true, passive: false });
-    
-    return () => {
-      document.body.style.userSelect = '';
-      document.removeEventListener('mousemove', onMove);
-    };
-  }, [draggingSlot, emojiOptions.length]);
-
   // // 1. Handle initial load from URL - only runs once on mount
   // useEffect(() => {
   //   const params = new URLSearchParams(window.location.search);
@@ -396,6 +281,106 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       }
     }
   }, [emojiIdx, emojiOptions, indicesToEmoji, userKey]);
+
+  // Global mouse handlers for click-and-drag emoji cycling
+  useEffect(() => {
+    if (draggingSlot === null) return;
+    
+    const onMove = (e: MouseEvent) => {
+      e.preventDefault();
+      const slot = dragRef.current.slot;
+      if (slot === null || slot < 0 || slot > 2) return;
+      
+      const dy = e.clientY - dragRef.current.lastY;
+      dragRef.current.lastY = e.clientY;
+      dragRef.current.accum += dy;
+      
+      const step = 18; // pixels per emoji step
+      const emojiCount = emojiOptions.length;
+      
+      // Batch updates for smoother animation
+      let delta = 0;
+      if (Math.abs(dragRef.current.accum) >= step) {
+        delta = Math.floor(dragRef.current.accum / step);
+        dragRef.current.accum %= step;
+        
+        setEmojiIdx(prev => {
+          const newIdx = [...prev] as [number, number, number];
+          // Calculate new index with wrapping
+          newIdx[slot] = (newIdx[slot] - delta + emojiCount) % emojiCount;
+          return newIdx;
+        });
+      }
+    };
+    
+    const onMouseUp = () => {
+      setDraggingSlot(null);
+      dragRef.current = { slot: null, lastY: 0, accum: 0 };
+      document.body.style.userSelect = '';
+    };
+    
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMove, { passive: false });
+    document.addEventListener('mouseup', onMouseUp, { once: true, passive: false });
+    
+    return () => {
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+    };
+  }, [draggingSlot, emojiOptions.length]);
+
+
+
+
+
+  // ---------------------- ---------------------- ---------------------- ---------------------- ---------------------- ----------------------
+
+
+
+
+  // Favorite IDs are stored per user from the server
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const toggleFavorite = async (id: string) => {
+    if (!userKey) return; // Can't favorite without a user
+    
+    const willFav = !favoriteIds.has(id);
+    
+    // Optimistic UI update
+    setFavoriteIds(prev => {
+      const next = new Set(prev);
+      if (willFav) next.add(id); else next.delete(id);
+      return next;
+    });
+    
+    // Sync with server
+    try {
+      const endpoint = `${API_BASE}/favorites/${encodeURIComponent(userKey)}/${id}`;
+      const method = willFav ? 'POST' : 'DELETE';
+      
+      const response = await fetch(endpoint, { method });
+      
+      // Revert on error
+      if (!response.ok) {
+        throw new Error(`Failed to ${willFav ? 'add' : 'remove'} favorite`);
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      // Revert optimistic update
+      setFavoriteIds(prev => {
+        const next = new Set(prev);
+        if (!willFav) next.add(id); else next.delete(id);
+        return next;
+      });
+    }
+  };
+  // Disable scroll restoration to avoid menu/popover clipping during filter changes
+  const enableScrollRestore = false;
+
+  useEffect(() => {
+    fetchFilters();
+    fetchHairstyles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // Fetch favorites for the current user
   const fetchFavorites = useCallback(async (userKey: string) => {
@@ -459,7 +444,6 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
       console.error('Error loading user from URL:', e);
     }
   }, []);
-
 
   // Load server favorites for user when userKey is present
   useEffect(() => {
