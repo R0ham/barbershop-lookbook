@@ -88,11 +88,29 @@ Notes:
 
 ## API Endpoints
 
+### Hairstyles
 - `GET /api/hairstyles` - Get all hairstyles with optional filters
 - `GET /api/hairstyles/:id` - Get specific hairstyle by ID
 - `GET /api/filters` - Get available filter options
 - `POST /api/hairstyles` - Add new hairstyle (with image upload)
 - `GET /api/images/:id` - Serve image data from database
+
+### Users
+- `GET /api/users/:id` - Get or create a user by ID (emoji string)
+  - Returns: `{ id: string, created_at: string, last_active: string }`
+
+### Favorites
+- `GET /api/favorites/:userId` - Get all favorites for a user
+  - Returns: `{ favorites: Hairstyle[] }`
+  
+- `POST /api/favorites/:userId/:hairstyleId` - Add a hairstyle to user's favorites
+  - Returns: `{ success: boolean, added: boolean }`
+  
+- `DELETE /api/favorites/:userId/:hairstyleId` - Remove a hairstyle from user's favorites
+  - Returns: `{ success: boolean, removed: boolean }`
+  
+- `GET /api/favorites/:userId/:hairstyleId` - Check if a hairstyle is favorited
+  - Returns: `{ isFavorite: boolean }`
 
 ## Database Schema
 
