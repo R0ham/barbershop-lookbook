@@ -259,39 +259,39 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   //   }
   // }, [userKey, emojiToIndices]);
 
-  // // 3. Update URL and localStorage when emojiIdx changes
-  // useEffect(() => {
-  //   if (!emojiIdx) return;
+  // 3. Update URL and localStorage when emojiIdx changes
+  useEffect(() => {
+    if (!emojiIdx) return;
     
-  //   // Convert current emoji indices to emoji string
-  //   const newEmojiString = indicesToEmoji(emojiIdx);
+    // Convert current emoji indices to emoji string
+    const newEmojiString = indicesToEmoji(emojiIdx);
     
-  //   // Update URL
-  //   try {
-  //     const url = new URL(window.location.href);
-  //     const currentUserParam = url.searchParams.get('user');
-  //     const newUserParam = emojiToCode(newEmojiString);
+    // Update URL
+    try {
+      const url = new URL(window.location.href);
+      const currentUserParam = url.searchParams.get('user');
+      const newUserParam = emojiToCode(newEmojiString);
       
-  //     // Only update if different to prevent loops
-  //     if (currentUserParam !== newUserParam) {
-  //       const newUrl = new URL(url.toString());
-  //       newUrl.searchParams.set('user', newUserParam);
-  //       window.history.replaceState({}, '', newUrl.toString());
-  //     }
-  //   } catch (e) {
-  //     console.error('Error updating URL:', e);
-  //   }
+      // Only update if different to prevent loops
+      if (currentUserParam !== newUserParam) {
+        const newUrl = new URL(url.toString());
+        newUrl.searchParams.set('user', newUserParam);
+        window.history.replaceState({}, '', newUrl.toString());
+      }
+    } catch (e) {
+      console.error('Error updating URL:', e);
+    }
     
-  //   // Update localStorage if userKey is different
-  //   if (newEmojiString !== userKey) {
-  //     try {
-  //       localStorage.setItem('hs_user', newEmojiString);
-  //       setUserKey(newEmojiString);
-  //     } catch (e) {
-  //       console.error('Error saving to localStorage:', e);
-  //     }
-  //   }
-  // }, [emojiIdx, emojiOptions, indicesToEmoji, userKey]);
+    // Update localStorage if userKey is different
+    if (newEmojiString !== userKey) {
+      try {
+        localStorage.setItem('hs_user', newEmojiString);
+        setUserKey(newEmojiString);
+      } catch (e) {
+        console.error('Error saving to localStorage:', e);
+      }
+    }
+  }, [emojiIdx, emojiOptions, indicesToEmoji, userKey]);
 
   // Global mouse handlers for click-and-drag emoji cycling
   useEffect(() => {
