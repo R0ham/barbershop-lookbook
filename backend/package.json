@@ -5,10 +5,14 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "start:pg": "node server-pg.js",
     "dev": "nodemon server.js",
+    "dev:pg": "nodemon server-pg.js",
     "migrate:unsplash": "node scripts/migrate_unsplash_api.js",
+    "migrate:to-pg": "node scripts/migrate-to-postgres.js",
     "prune:keep": "node scripts/prune_keep_first_n.js",
     "prune:keep:dry": "node scripts/prune_keep_first_n.js --dry-run",
+    "backfill:unsplash": "node scripts/backfill_unsplash_artists_postgres.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
@@ -17,6 +21,9 @@
     "express": "^4.21.2",
     "multer": "^1.4.5-lts.1",
     "node-fetch": "^2.7.0",
+    "pg": "^8.11.3",
+    "pg-hstore": "^2.3.4",
+    "pg-native": "^3.1.0",
     "path": "^0.12.7",
     "sqlite3": "^5.1.7",
     "uuid": "^9.0.0"
@@ -27,7 +34,9 @@
   "keywords": [
     "hairstyles",
     "gallery",
-    "api"
+    "api",
+    "postgresql",
+    "sqlite"
   ],
   "author": "",
   "license": "MIT"
