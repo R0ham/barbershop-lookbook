@@ -117,12 +117,18 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
 
   // Convert emoji into coded string
   const emojiToCode = useCallback((input: string): string => {
+    // Use Array.from to properly handle emoji characters
+    const emojis = Array.from(input);
+    // console.log('Input emojis:', emojis.map(c => `${c} (${c.codePointAt(0)?.toString(16)})`));
+    
     const convert = (emoji: string) => {
+      // console.log('Looking for emoji:', emoji, 'code:', emoji.codePointAt(0)?.toString(16));
       const found = emojiOptions.find(e => e.emoji === emoji);
+      // console.log('Found:', found?.code || 'not found');
       return found ? found.code : 'smile';
     };
     
-    return input.split('').map(convert).join('_');
+    return emojis.map(convert).join('_');
   }, [emojiOptions]);
 
   // Convert coded string into emoji
@@ -144,8 +150,8 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   
   // Parse emoji string to index array
   const emojiToIndices = useCallback((str: string): [number, number, number] => {
-    return str
-      .split('')
+    if (!str) return [0, 0, 0];
+    return Array.from(str)
       .slice(0, 3)
       .map(emoji => emojiOptions.findIndex(e => e.emoji === emoji))
       .map(idx => Math.max(0, idx))
@@ -155,6 +161,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
   
   // Convert indices to emoji string
   const indicesToEmoji = useCallback((indices: [number, number, number]): string => {
+    if (!indices || !Array.isArray(indices)) return '😀😀😀';
     return indices.map(idx => getEmoji(idx)).join('');
   }, [getEmoji]);
 
@@ -170,20 +177,23 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
         // localStorage.setItem('hs_user', emojiString); // Commented out
         return emojiString;
       }
-      
+      const newKey = `${randomEmoji()}${randomEmoji()}${randomEmoji()}`;
       // Then try localStorage
       // const storedKey = localStorage.getItem('hs_user');
       // if (storedKey) return storedKey;
       
-      const newKey = `${randomEmoji()}${randomEmoji()}${randomEmoji()}`;
       // localStorage.setItem('hs_user', newKey); // Commented out
       // Update URL to match the new key
       const newUrl = new URL(window.location.href);
       const newUserParam = emojiToCode(newKey);
       newUrl.searchParams.set('user', newUserParam);
       window.history.replaceState({}, '', newUrl.toString());
+
+      console.log(newKey);
+      console.log(newUserParam);
       
       return newKey;
+      
     } catch (e) {
       console.error('Error initializing user key:', e);
       return '😀😀😀'; // Fallback
