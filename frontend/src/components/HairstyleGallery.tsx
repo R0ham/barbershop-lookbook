@@ -291,7 +291,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
         console.error('Error saving to localStorage:', e);
       }
     }
-  }, [emojiIdx, emojiOptions, indicesToEmoji, userKey]);
+  }, [emojiIdx, emojiOptions, indicesToEmoji, userKey, emojiToCode]);
 
   // Global mouse handlers for click-and-drag emoji cycling
   useEffect(() => {
@@ -454,7 +454,7 @@ const HairstyleGallery: React.FC<{ headerSearch?: string }> = ({ headerSearch })
     } catch (e) {
       console.error('Error loading user from URL:', e);
     }
-  }, []);
+  }, [codeToEmoji, fetchFavorites, userKey]);
 
   // Load server favorites for user when userKey is present
   useEffect(() => {
