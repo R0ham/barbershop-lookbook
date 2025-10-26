@@ -26,8 +26,8 @@ A modern web application built on React, Tailwind CSS, and Node.js to help users
 
 ### Backend
 - Node.js with Express
-- SQLite (local development)
-- Netlify Functions + Neon Postgres (production)
+- PostgreSQL (local development and production)
+    - Production uses Netlify Functions for deployment and Neon Postgres for the database
 - RESTful API endpoints
 - Image upload support with Multer
 
@@ -36,6 +36,7 @@ A modern web application built on React, Tailwind CSS, and Node.js to help users
 ### Prerequisites
 - Node.js (v14 or higher)
 - npm or yarn
+- PostgreSQL (v12 or higher) - [Installation Guide](https://www.postgresql.org/download/)
 
 ### Installation
 
@@ -45,13 +46,38 @@ git clone <repository-url>
 cd hairstyles-gallery
 ```
 
-2. Install backend dependencies:
+2. Set up PostgreSQL:
+   - Install PostgreSQL if you haven't already
+   - Create a new database:
+     ```sql
+     CREATE DATABASE hairstyles;
+     ```
+   - Create a user with access to the database (or use your existing superuser):
+     ```sql
+     CREATE USER your_username WITH PASSWORD 'your_password';
+     GRANT ALL PRIVILEGES ON DATABASE hairstyles TO your_username;
+     ```
+
+3. Configure environment variables:
+   - Copy `.env.example` to `.env` in the backend directory:
+     ```bash
+     cd backend
+     cp .env.example .env
+     ```
+   - Update the `.env` file with your PostgreSQL connection details:
+     ```
+     DATABASE_URL=postgresql://your_username:your_password@localhost:5432/hairstyles
+     PORT=5001
+     NODE_ENV=development
+     ```
+
+4. Install backend dependencies:
 ```bash
 cd backend
 npm install
 ```
 
-3. Install frontend dependencies:
+5. Install frontend dependencies:
 ```bash
 cd ../frontend
 npm install
@@ -59,32 +85,37 @@ npm install
 
 ### Running the Application
 
-#### Local development (.env required)
-Create `frontend/.env` to point the frontend to your local backend:
+1. **Set up the frontend environment**
+   Create `frontend/.env` to point the frontend to your local backend:
+   ```ini
+   REACT_APP_API_BASE_URL=http://localhost:5001
+   ```
 
-```ini
-REACT_APP_API_BASE_URL=http://localhost:5001
-```
+2. **Initialize the database**
+   Run the migration to set up the database schema:
+   ```bash
+   cd backend
+   npm run migrate:to-pg
+   ```
 
-Then run the servers:
+3. **Start the backend server**
+   ```bash
+   npm run dev:pg
+   ```
+   The backend will run on http://localhost:5001
 
-1. Start the backend server:
-```bash
-cd backend
-npm run dev
-```
-The backend will run on http://localhost:5001
+4. **Start the frontend development server** (in a new terminal):
+   ```bash
+   cd frontend
+   npm start
+   ```
+   The frontend will run on http://localhost:3000
 
-2. Start the frontend development server:
-```bash
-cd frontend
-npm start
-```
-The frontend will run on http://localhost:3000
+### Development Scripts
 
-Notes:
-- Local DB persistence is via `backend/hairstyles.db` (SQLite).
-- If you omit `REACT_APP_API_BASE_URL` in local dev, the frontend will attempt to call same-origin `/api/*` (Netlify Functions), which is intended for production.
+- `npm run dev:pg` - Start the backend with PostgreSQL
+- `npm run migrate:to-pg` - Run database migrations
+- `npm run backfill:unsplash` - Backfill Unsplash artist information
 
 ## API Endpoints
 
@@ -148,7 +179,7 @@ The frontend uses same-origin `/api/*` in production. Do not set `REACT_APP_API_
   - Seed a small set of sample rows only if the table is empty.
 - Endpoints implemented in the function:
   - `GET /api/filters`, `GET /api/hairstyles`, `GET /api/hairstyles/:id` and `PUT /api/hairstyles/:id/ethnicity`.
-  - Note: a create endpoint is not exposed in the Netlify function (creation is available only in local dev via SQLite `POST /api/hairstyles`).
+  - Note: a create endpoint is not exposed in the Netlify function (creation is available only in local dev via PostgreSQL `POST /api/hairstyles`).
 
 ## Contributing
 
