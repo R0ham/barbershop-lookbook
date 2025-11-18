@@ -144,21 +144,31 @@ function splitCsv(val) {
 async function handleGetFilters() {
   const client = await pool.connect();
   try {
-    const [lengths, textures, styleTypes, poses, ethnicities, faceShapes] = await Promise.all([
-      client.query('SELECT DISTINCT length FROM hairstyles ORDER BY length'),
-      client.query('SELECT DISTINCT texture FROM hairstyles ORDER BY texture'),
-      client.query('SELECT DISTINCT style_type FROM hairstyles ORDER BY style_type'),
-      client.query('SELECT DISTINCT pose FROM hairstyles ORDER BY pose'),
-      client.query('SELECT DISTINCT ethnicity FROM hairstyles WHERE ethnicity IS NOT NULL ORDER BY ethnicity'),
-      client.query("SELECT DISTINCT jsonb_array_elements_text(face_shapes) AS shape FROM hairstyles")
+    // First get all the regular filters
+    const [lengths, textures, styleTypes, poses, ethnicities] = await Promise.all([
+      client.query('SELECT DISTINCT length FROM hairstyles WHERE length IS NOT NULL ORDER BY length'),
+      client.query('SELECT DISTINCT texture FROM hairstyles WHERE texture IS NOT NULL ORDER BY texture'),
+      client.query('SELECT DISTINCT style_type FROM hairstyles WHERE style_type IS NOT NULL ORDER BY style_type'),
+      client.query('SELECT DISTINCT pose FROM hairstyles WHERE pose IS NOT NULL ORDER BY pose'),
+      client.query('SELECT DISTINCT ethnicity FROM hairstyles WHERE ethnicity IS NOT NULL ORDER BY ethnicity')
     ]);
+    
+    // Get face shapes as a separate query since we need to handle the comma-separated values
+    const faceShapesResult = await client.query(`
+      SELECT DISTINCT trim(unnest(string_to_array(face_shapes, ','))) as shape 
+      FROM hairstyles 
+      WHERE face_shapes IS NOT NULL 
+        AND face_shapes != ''
+        AND face_shapes != '[]'
+      ORDER BY shape
+    `);
     return json(null, 200, {
       lengths: lengths.rows.map(r => r.length),
       textures: textures.rows.map(r => r.texture),
       style_types: styleTypes.rows.map(r => r.style_type),
       poses: poses.rows.map(r => r.pose),
-      face_shapes: faceShapes.rows.map(r => r.shape).sort(),
-      ethnicities: (ethnicities.rows || []).map(r => r.ethnicity)
+      face_shapes: [...new Set(faceShapesResult.rows.map(r => r.shape.trim()))].filter(Boolean).sort(),
+      ethnicities: (ethnicities.rows || []).map(r => r.ethnicity).filter(Boolean) || ['Caucasian', 'Asian', 'Afro']
     });
   } finally {
     client.release();
