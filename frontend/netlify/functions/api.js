@@ -14,12 +14,12 @@ async function init() {
     // Create schema if not exists
     await pool.query(`
       CREATE TABLE IF NOT EXISTS hairstyles (
-        id UUID PRIMARY KEY,
+        id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         category TEXT NOT NULL,
         length TEXT NOT NULL,
         texture TEXT NOT NULL,
-        face_shapes JSONB NOT NULL,
+        face_shapes TEXT NOT NULL,
         style_type TEXT DEFAULT 'Unisex',
         pose TEXT DEFAULT 'Straight-on',
         ethnicity TEXT,
@@ -28,10 +28,11 @@ async function init() {
         artist_url TEXT,
         unsplash_photo_id TEXT,
         description TEXT,
-        tags JSONB,
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        updated_at TIMESTAMPTZ DEFAULT NOW()
+        tags TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
+      
       CREATE INDEX IF NOT EXISTS idx_hairstyles_category ON hairstyles(category);
       CREATE INDEX IF NOT EXISTS idx_hairstyles_length ON hairstyles(length);
       CREATE INDEX IF NOT EXISTS idx_hairstyles_texture ON hairstyles(texture);
@@ -39,44 +40,28 @@ async function init() {
       CREATE INDEX IF NOT EXISTS idx_hairstyles_pose ON hairstyles(pose);
       CREATE INDEX IF NOT EXISTS idx_hairstyles_ethnicity ON hairstyles(ethnicity);
       CREATE INDEX IF NOT EXISTS idx_hairstyles_unsplash_photo_id ON hairstyles(unsplash_photo_id);
+      
       -- Safe migrations for existing tables
       ALTER TABLE hairstyles ADD COLUMN IF NOT EXISTS artist_name TEXT;
       ALTER TABLE hairstyles ADD COLUMN IF NOT EXISTS artist_url TEXT;
+      ALTER TABLE hairstyles ADD COLUMN IF NOT EXISTS unsplash_photo_id TEXT;
       
-      -- Favorites: simple per-user key (emoji username)
+      -- Users table for favorites
       CREATE TABLE IF NOT EXISTS users (
-        user_key TEXT PRIMARY KEY,
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        last_active TIMESTAMPTZ DEFAULT NOW()
+        id TEXT PRIMARY KEY,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        last_active TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       );
       
+      -- User favorites (many-to-many)
       CREATE TABLE IF NOT EXISTS user_favorites (
-        user_key TEXT NOT NULL,
-        hairstyle_id UUID NOT NULL,
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        PRIMARY KEY (user_key, hairstyle_id),
-        CONSTRAINT fk_user
-          FOREIGN KEY(user_key) 
-          REFERENCES users(user_key)
-          ON DELETE CASCADE
+        user_id TEXT NOT NULL,
+        hairstyle_id TEXT NOT NULL,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, hairstyle_id),
+        CONSTRAINT fk_user FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+        CONSTRAINT fk_hairstyle FOREIGN KEY(hairstyle_id) REFERENCES hairstyles(id) ON DELETE CASCADE
       );
-      
-      -- Create default user if none exists
-      CREATE OR REPLACE FUNCTION ensure_default_user() RETURNS void AS $$
-      BEGIN
-        IF NOT EXISTS (SELECT 1 FROM users WHERE user_key = 'default') THEN
-          INSERT INTO users (user_key) VALUES ('default');
-        END IF;
-      END;
-      $$ LANGUAGE plpgsql;
-      
-      SELECT ensure_default_user();
-      
-      -- Create indexes for better performance
-      CREATE INDEX IF NOT EXISTS idx_user_fav_user ON user_favorites(user_key);
-      CREATE INDEX IF NOT EXISTS idx_user_fav_hsid ON user_favorites(hairstyle_id);
-      
-      -- Update last_active timestamp on user interaction
       CREATE OR REPLACE FUNCTION update_user_activity() RETURNS TRIGGER AS $$
       BEGIN
         UPDATE users SET last_active = NOW() WHERE user_key = NEW.user_key;
