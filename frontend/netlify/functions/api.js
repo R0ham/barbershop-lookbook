@@ -62,13 +62,21 @@ async function init() {
         CONSTRAINT fk_user FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
         CONSTRAINT fk_hairstyle FOREIGN KEY(hairstyle_id) REFERENCES hairstyles(id) ON DELETE CASCADE
       );
-      CREATE OR REPLACE FUNCTION update_user_activity() RETURNS TRIGGER AS $$
-      BEGIN
-        UPDATE users SET last_active = NOW() WHERE user_key = NEW.user_key;
-        RETURN NEW;
-      END;
-      $$ LANGUAGE plpgsql;
       
+      -- Only create the function if it doesn't exist
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'update_user_activity') THEN
+          CREATE OR REPLACE FUNCTION update_user_activity() RETURNS TRIGGER AS $$
+          BEGIN
+            UPDATE users SET last_active = NOW() WHERE id = NEW.user_id;
+            RETURN NEW;
+          END;
+          $$ LANGUAGE plpgsql;
+        END IF;
+      END $$;
+      
+      -- Drop and recreate the trigger if it exists
       DROP TRIGGER IF EXISTS trigger_user_activity ON user_favorites;
       CREATE TRIGGER trigger_user_activity
       AFTER INSERT OR UPDATE OR DELETE ON user_favorites
