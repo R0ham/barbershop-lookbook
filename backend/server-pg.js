@@ -200,29 +200,27 @@ app.get('/api/images/:id', async (req, res) => {
 // Get filter options
 app.get('/api/filters', async (req, res) => {
   try {
-    const [categories, lengths, textures, faceShapes, styleTypes, poses, ethnicities] = await Promise.all([
-      db.query('SELECT DISTINCT category FROM hairstyles WHERE category IS NOT NULL ORDER BY category'),
+    const [lengths, textures, styleTypes, poses, faceShapes, ethnicities] = await Promise.all([
       db.query('SELECT DISTINCT length FROM hairstyles WHERE length IS NOT NULL ORDER BY length'),
       db.query('SELECT DISTINCT texture FROM hairstyles WHERE texture IS NOT NULL ORDER BY texture'),
+      db.query('SELECT DISTINCT style_type FROM hairstyles WHERE style_type IS NOT NULL ORDER BY style_type'),
+      db.query('SELECT DISTINCT pose FROM hairstyles WHERE pose IS NOT NULL ORDER BY pose'),
       db.query(`
         SELECT DISTINCT unnest(string_to_array(face_shapes, ',')) as shape 
         FROM hairstyles 
         WHERE face_shapes IS NOT NULL 
         ORDER BY shape
       `),
-      db.query('SELECT DISTINCT style_type FROM hairstyles WHERE style_type IS NOT NULL ORDER BY style_type'),
-      db.query('SELECT DISTINCT pose FROM hairstyles WHERE pose IS NOT NULL ORDER BY pose'),
       db.query('SELECT DISTINCT ethnicity FROM hairstyles WHERE ethnicity IS NOT NULL ORDER BY ethnicity')
     ]);
     
     res.json({
-      categories: categories.rows.map(r => r.category),
       lengths: lengths.rows.map(r => r.length),
       textures: textures.rows.map(r => r.texture),
-      faceShapes: [...new Set(faceShapes.rows.map(r => r.shape.trim()))].filter(Boolean),
-      styleTypes: styleTypes.rows.map(r => r.style_type),
+      face_shapes: [...new Set(faceShapes.rows.map(r => r.shape.trim()))].filter(Boolean),
+      style_types: styleTypes.rows.map(r => r.style_type),
       poses: poses.rows.map(r => r.pose),
-      ethnicities: ethnicities.rows.map(r => r.ethnicity).filter(Boolean)
+      ethnicities: ethnicities.rows.map(r => r.ethnicity).filter(Boolean) || ['Caucasian', 'Asian', 'Afro']
     });
   } catch (error) {
     console.error('Error fetching filters:', error);
